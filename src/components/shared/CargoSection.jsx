@@ -1,5 +1,19 @@
+// src/components/shared/CargoSection.jsx
 import React from 'react';
 import { Plus, X, Package } from 'lucide-react';
+
+const CARGO_TYPES = ['General', 'Batteries', 'Dangerous Goods'];
+const COMMODITY_OPTIONS = [
+  'Automotive Parts',
+  'Machinery',
+  'Spare Parts',
+  'Electrical Equipment',
+  'Consolidated Cargo',
+  'Aerospace',
+  'Food',
+  'Ship Spares',
+  'Other products',
+];
 
 const CargoSection = ({ cargo, onChange, isDarkMode, error }) => {
   const addPiece = () => {
@@ -11,6 +25,7 @@ const CargoSection = ({ cargo, onChange, isDarkMode, error }) => {
       width: 0,
       height: 0,
       commodity: '',
+      cargoType: 'General', // Add this
       stackable: true
     };
     onChange({
@@ -35,6 +50,14 @@ const CargoSection = ({ cargo, onChange, isDarkMode, error }) => {
     });
   };
 
+  // Handle stackable for all pieces
+  const handleStackableChange = (value) => {
+    onChange({
+      ...cargo,
+      pieces: cargo.pieces.map(p => ({ ...p, stackable: value }))
+    });
+  };
+
   return (
     <div className={`p-4 rounded-lg mb-6 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
       <div className="flex justify-between items-center mb-4">
@@ -52,6 +75,19 @@ const CargoSection = ({ cargo, onChange, isDarkMode, error }) => {
           <Plus className="w-4 h-4" />
           Add Piece
         </button>
+      </div>
+
+      {/* Stackable checkbox for all cargo */}
+      <div className="mb-4">
+        <label className={`flex items-center gap-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+          <input
+            type="checkbox"
+            checked={cargo.pieces[0]?.stackable ?? true}
+            onChange={(e) => handleStackableChange(e.target.checked)}
+            className="w-4 h-4"
+          />
+          <span className="text-sm">All cargo is stackable</span>
+        </label>
       </div>
 
       {error && (
@@ -148,19 +184,41 @@ const CargoSection = ({ cargo, onChange, isDarkMode, error }) => {
               />
             </div>
 
+            {/* Add Cargo Type */}
             <div>
               <label className={`block text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                Commodity
+                Cargo Type
               </label>
-              <input
-                type="text"
-                value={piece.commodity}
-                onChange={(e) => updatePiece(piece.id, 'commodity', e.target.value)}
-                placeholder="Description"
+              <select
+                value={piece.cargoType || 'General'}
+                onChange={(e) => updatePiece(piece.id, 'cargoType', e.target.value)}
                 className={`w-full px-2 py-1 rounded border ${
                   isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
                 }`}
-              />
+              >
+                {CARGO_TYPES.map(type => (
+                  <option key={type} value={type}>{type}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Commodity field across full width */}
+            <div className="md:col-span-3">
+              <label className={`block text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Commodity
+              </label>
+              <select
+                value={piece.commodity}
+                onChange={(e) => updatePiece(piece.id, 'commodity', e.target.value)}
+                className={`w-full px-2 py-1 rounded border ${
+                  isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
+                }`}
+              >
+                <option value="">Select commodity...</option>
+                {COMMODITY_OPTIONS.map(opt => (
+                  <option key={opt} value={opt}>{opt}</option>
+                ))}
+              </select>
             </div>
           </div>
         </div>
