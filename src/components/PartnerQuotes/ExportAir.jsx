@@ -84,10 +84,34 @@ const ExportAir = ({ shellContext }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Submit quote
-  const handleSubmit = async () => {
-    if (!validateForm()) return;
-    
+const handleSubmit = async () => {
+  if (!validateForm()) return;
+  
+  // Check if any cargo piece has batteries or dangerous goods
+  const hasBatteries = formData.cargo.pieces.some(p => p.cargoType === 'Batteries');
+  const hasDG = formData.cargo.pieces.some(p => p.cargoType === 'Dangerous Goods');
+  
+  // If special cargo, navigate to appropriate form
+  if (hasDG && !hasBatteries) {
+    navigate('/quotes/dg-details', { 
+      state: { draft: formData } 
+    });
+    return;
+  }
+  
+  if (hasBatteries && !hasDG) {
+    navigate('/quotes/battery-details', { 
+      state: { draft: formData } 
+    });
+    return;
+  }
+  
+  if (hasDG && hasBatteries) {
+    navigate('/quotes/dg-details', {
+      state: { draft: formData, includeBatterySection: true }
+    });
+    return;
+  }
     setLoading(true);
     try {
       const response = await axios.post('/api/quotes/create', {
