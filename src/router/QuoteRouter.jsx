@@ -9,20 +9,12 @@ const QuoteRouter = ({ userRole, shellContext }) => {
 
   return (
     <Routes>
-      {isForeignPartner ? (
-        <>
-          {/* Foreign Partner Routes */}
-          <Route path="/*" element={<PartnerQuotes shellContext={shellContext} />} />
-        </>
-      ) : (
-        <>
-          {/* Customer Routes */}
-          <Route path="/*" element={<CustomerQuotes shellContext={shellContext} />} />
-        </>
-      )}
-      
-      {/* Default redirect - changed from /dashboard to root */}
-      <Route path="/" element={<Navigate to="/" replace />} />
+      {/* Route everything to the appropriate component based on role */}
+      <Route path="/*" element={
+        isForeignPartner ? 
+          <PartnerQuotes shellContext={shellContext} /> : 
+          <CustomerQuotes shellContext={shellContext} />
+      } />
     </Routes>
   );
 };
