@@ -1,3 +1,4 @@
+/** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
     "./src/**/*.{js,jsx,ts,tsx}",
@@ -7,10 +8,10 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        'conship-purple': '#5B21B6',
+        'conship-purple': '#6B46C1',
         'conship-orange': '#FB923C',
-      },
+      }
     },
   },
   plugins: [],
-};
+}
