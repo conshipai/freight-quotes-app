@@ -1,0 +1,8 @@
+version: '3.8'
+
+services:
+  quotes:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "80"
