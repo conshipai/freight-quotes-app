@@ -1,5 +1,5 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route } from 'react-router-dom';
 import CustomerQuotes from '../components/CustomerQuotes';
 import PartnerQuotes from '../components/PartnerQuotes';
 
