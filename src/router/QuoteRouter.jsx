@@ -21,8 +21,8 @@ const QuoteRouter = ({ userRole, shellContext }) => {
         </>
       )}
       
-      {/* Default redirect */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      {/* Default redirect - changed from /dashboard to root */}
+      <Route path="/" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };
