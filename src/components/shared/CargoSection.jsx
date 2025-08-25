@@ -15,7 +15,7 @@ const COMMODITY_OPTIONS = [
   'Other products',
 ];
 
-const CargoSection = ({ cargo, onChange, isDarkMode, error }) => {
+const CargoSection = ({ cargo, onChange, isDarkMode, error, unitLabels }) => {
   const addPiece = () => {
     const newPiece = {
       id: Date.now(),
@@ -25,13 +25,21 @@ const CargoSection = ({ cargo, onChange, isDarkMode, error }) => {
       width: 0,
       height: 0,
       commodity: '',
-      cargoType: 'General', // Add this
+      cargoType: 'General',
       stackable: true
     };
     onChange({
       ...cargo,
       pieces: [...cargo.pieces, newPiece]
     });
+  };
+
+  // ✅ Default unit labels if not provided
+  const labels = unitLabels || {
+    weight: 'Weight (lbs)',
+    length: 'Length (in)',
+    width: 'Width (in)',
+    height: 'Height (in)'
   };
 
   const removePiece = (id) => {
@@ -130,7 +138,7 @@ const CargoSection = ({ cargo, onChange, isDarkMode, error }) => {
 
             <div>
               <label className={`block text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                Weight (lbs)
+                {labels.weight} {/* ✅ dynamic */}
               </label>
               <input
                 type="number"
@@ -144,7 +152,7 @@ const CargoSection = ({ cargo, onChange, isDarkMode, error }) => {
 
             <div>
               <label className={`block text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                Length (in)
+                {labels.length} {/* ✅ dynamic */}
               </label>
               <input
                 type="number"
@@ -158,7 +166,7 @@ const CargoSection = ({ cargo, onChange, isDarkMode, error }) => {
 
             <div>
               <label className={`block text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                Width (in)
+                {labels.width} {/* ✅ dynamic */}
               </label>
               <input
                 type="number"
@@ -172,7 +180,7 @@ const CargoSection = ({ cargo, onChange, isDarkMode, error }) => {
 
             <div>
               <label className={`block text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                Height (in)
+                {labels.height} {/* ✅ dynamic */}
               </label>
               <input
                 type="number"
