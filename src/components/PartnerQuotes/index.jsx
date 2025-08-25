@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Routes, Route, NavLink, useNavigate } from 'react-router-dom';
+import { Routes, Route, NavLink, Navigate, useNavigate } from 'react-router-dom';
 import { Plane, Ship, Briefcase, Plus } from 'lucide-react';
 import ExportAir from './ExportAir';
 import ExportOcean from './ExportOcean';
