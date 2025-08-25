@@ -6,6 +6,8 @@ import PartnerQuotes from '../components/PartnerQuotes';
 const QuoteRouter = ({ userRole, shellContext }) => {
   // Check if user is a foreign partner
   const isForeignPartner = userRole === 'foreign_partner';
+  
+  console.log('QuoteRouter - userRole:', userRole, 'isForeignPartner:', isForeignPartner);
 
   return (
     <Routes>
