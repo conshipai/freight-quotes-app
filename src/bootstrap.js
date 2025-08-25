@@ -11,12 +11,23 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 if (isStandalone) {
   // Standalone mode for testing
   console.log('Running in standalone mode');
+  
+  // Use the mockShellContext from index.html if available, otherwise use defaults
+  const mockContext = window.mockShellContext || {
+    user: { 
+      role: 'foreign_partner',
+      name: 'Test User',
+      email: 'test@example.com'
+    },
+    isDarkMode: false,
+    token: 'mock-token-123'
+  };
+  
+  console.log('Using role:', mockContext.user?.role);
+  
   root.render(
     <React.StrictMode>
-      <App shellContext={window.mockShellContext || {
-        user: { role: 'foreign_partner' },
-        isDarkMode: false
-      }} />
+      <App shellContext={mockContext} />
     </React.StrictMode>
   );
 } else {
