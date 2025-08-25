@@ -4,13 +4,15 @@ import QuoteRouter from './router/QuoteRouter';
 import './styles/index.css';
 
 function App({ shellContext }) {
-  const [userRole, setUserRole] = useState(null);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  // Initialize with the role from shellContext immediately
+  const [userRole, setUserRole] = useState(shellContext?.user?.role || 'foreign_partner');
+  const [isDarkMode, setIsDarkMode] = useState(shellContext?.isDarkMode || false);
 
   useEffect(() => {
     if (shellContext) {
-      setUserRole(shellContext.user?.role);
-      setIsDarkMode(shellContext.isDarkMode);
+      console.log('Shell context updated:', shellContext);
+      setUserRole(shellContext.user?.role || 'foreign_partner');
+      setIsDarkMode(shellContext.isDarkMode || false);
     }
   }, [shellContext]);
 
