@@ -24,7 +24,8 @@ const ExportAir = ({ shellContext }) => {
     
     // Carrier selection based on incoterm
     carriers: [], // Will be Freightforce, Pelicargo based on selection
-    
+      // Add this:
+    units: 'imperial', // 'imperial' or 'metric'
     // Cargo
     cargo: {
       pieces: [{
