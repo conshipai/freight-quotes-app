@@ -1,6 +1,5 @@
 // src/components/shared/CargoSection.jsx
 import React, { useMemo } from 'react';
-import PropTypes from 'prop-types';
 import { Plus, X, Package } from 'lucide-react';
 
 const CARGO_TYPES = ['General', 'Batteries', 'Dangerous Goods'];
