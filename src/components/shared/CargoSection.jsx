@@ -1,5 +1,6 @@
 // src/components/shared/CargoSection.jsx
-import React from 'react';
+import React, { useMemo } from 'react';
+import PropTypes from 'prop-types';
 import { Plus, X, Package } from 'lucide-react';
 
 const CARGO_TYPES = ['General', 'Batteries', 'Dangerous Goods'];
@@ -15,7 +16,29 @@ const COMMODITY_OPTIONS = [
   'Other products',
 ];
 
-const CargoSection = ({ cargo, onChange, isDarkMode, error, unitLabels }) => {
+const UNIT_PRESETS = {
+  imperial: {
+    weight: 'Weight (lbs)',
+    length: 'Length (in)',
+    width: 'Width (in)',
+    height: 'Height (in)',
+  },
+  metric: {
+    weight: 'Weight (kg)',
+    length: 'Length (cm)',
+    width: 'Width (cm)',
+    height: 'Height (cm)',
+  },
+};
+
+const CargoSection = ({
+  cargo,
+  onChange,
+  isDarkMode,
+  error,
+  unitLabels,
+  unitSystem = 'imperial',
+}) => {
   const addPiece = () => {
     const newPiece = {
       id: Date.now(),
@@ -26,35 +49,31 @@ const CargoSection = ({ cargo, onChange, isDarkMode, error, unitLabels }) => {
       height: 0,
       commodity: '',
       cargoType: 'General',
-      stackable: true
+      stackable: true,
     };
     onChange({
       ...cargo,
-      pieces: [...cargo.pieces, newPiece]
+      pieces: [...cargo.pieces, newPiece],
     });
   };
 
-  // ✅ Default unit labels if not provided
-  const labels = unitLabels || {
-    weight: 'Weight (lbs)',
-    length: 'Length (in)',
-    width: 'Width (in)',
-    height: 'Height (in)'
-  };
+  // Decide labels: unitLabels (highest priority) → unitSystem preset → imperial fallback
+  const labels = useMemo(() => {
+    const preset = UNIT_PRESETS[unitSystem] || UNIT_PRESETS.imperial;
+    return { ...preset, ...(unitLabels || {}) };
+  }, [unitSystem, unitLabels]);
 
   const removePiece = (id) => {
     onChange({
       ...cargo,
-      pieces: cargo.pieces.filter(p => p.id !== id)
+      pieces: cargo.pieces.filter((p) => p.id !== id),
     });
   };
 
   const updatePiece = (id, field, value) => {
     onChange({
       ...cargo,
-      pieces: cargo.pieces.map(p => 
-        p.id === id ? { ...p, [field]: value } : p
-      )
+      pieces: cargo.pieces.map((p) => (p.id === id ? { ...p, [field]: value } : p)),
     });
   };
 
@@ -62,7 +81,7 @@ const CargoSection = ({ cargo, onChange, isDarkMode, error, unitLabels }) => {
   const handleStackableChange = (value) => {
     onChange({
       ...cargo,
-      pieces: cargo.pieces.map(p => ({ ...p, stackable: value }))
+      pieces: cargo.pieces.map((p) => ({ ...p, stackable: value })),
     });
   };
 
@@ -98,14 +117,15 @@ const CargoSection = ({ cargo, onChange, isDarkMode, error, unitLabels }) => {
         </label>
       </div>
 
-      {error && (
-        <div className="mb-3 text-red-500 text-sm">{error}</div>
-      )}
+      {error && <div className="mb-3 text-red-500 text-sm">{error}</div>}
 
       {cargo.pieces.map((piece, index) => (
-        <div key={piece.id} className={`mb-4 p-3 rounded border ${
-          isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'
-        }`}>
+        <div
+          key={piece.id}
+          className={`mb-4 p-3 rounded border ${
+            isDarkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-200'
+          }`}
+        >
           <div className="flex justify-between items-center mb-3">
             <h4 className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
               Piece {index + 1}
@@ -123,13 +143,11 @@ const CargoSection = ({ cargo, onChange, isDarkMode, error, unitLabels }) => {
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
-              <label className={`block text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                Quantity
-              </label>
+              <label className={`block text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Quantity</label>
               <input
                 type="number"
                 value={piece.quantity}
-                onChange={(e) => updatePiece(piece.id, 'quantity', parseInt(e.target.value) || 0)}
+                onChange={(e) => updatePiece(piece.id, 'quantity', parseInt(e.target.value, 10) || 0)}
                 className={`w-full px-2 py-1 rounded border ${
                   isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
                 }`}
@@ -138,7 +156,7 @@ const CargoSection = ({ cargo, onChange, isDarkMode, error, unitLabels }) => {
 
             <div>
               <label className={`block text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                {labels.weight} {/* ✅ dynamic */}
+                {labels.weight}
               </label>
               <input
                 type="number"
@@ -152,7 +170,7 @@ const CargoSection = ({ cargo, onChange, isDarkMode, error, unitLabels }) => {
 
             <div>
               <label className={`block text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                {labels.length} {/* ✅ dynamic */}
+                {labels.length}
               </label>
               <input
                 type="number"
@@ -166,7 +184,7 @@ const CargoSection = ({ cargo, onChange, isDarkMode, error, unitLabels }) => {
 
             <div>
               <label className={`block text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                {labels.width} {/* ✅ dynamic */}
+                {labels.width}
               </label>
               <input
                 type="number"
@@ -180,7 +198,7 @@ const CargoSection = ({ cargo, onChange, isDarkMode, error, unitLabels }) => {
 
             <div>
               <label className={`block text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                {labels.height} {/* ✅ dynamic */}
+                {labels.height}
               </label>
               <input
                 type="number"
@@ -192,11 +210,9 @@ const CargoSection = ({ cargo, onChange, isDarkMode, error, unitLabels }) => {
               />
             </div>
 
-            {/* Add Cargo Type */}
+            {/* Cargo Type */}
             <div>
-              <label className={`block text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                Cargo Type
-              </label>
+              <label className={`block text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Cargo Type</label>
               <select
                 value={piece.cargoType || 'General'}
                 onChange={(e) => updatePiece(piece.id, 'cargoType', e.target.value)}
@@ -204,17 +220,17 @@ const CargoSection = ({ cargo, onChange, isDarkMode, error, unitLabels }) => {
                   isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
                 }`}
               >
-                {CARGO_TYPES.map(type => (
-                  <option key={type} value={type}>{type}</option>
+                {CARGO_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
                 ))}
               </select>
             </div>
 
-            {/* Commodity field across full width */}
+            {/* Commodity */}
             <div className="md:col-span-3">
-              <label className={`block text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                Commodity
-              </label>
+              <label className={`block text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Commodity</label>
               <select
                 value={piece.commodity}
                 onChange={(e) => updatePiece(piece.id, 'commodity', e.target.value)}
@@ -223,8 +239,10 @@ const CargoSection = ({ cargo, onChange, isDarkMode, error, unitLabels }) => {
                 }`}
               >
                 <option value="">Select commodity...</option>
-                {COMMODITY_OPTIONS.map(opt => (
-                  <option key={opt} value={opt}>{opt}</option>
+                {COMMODITY_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
                 ))}
               </select>
             </div>
@@ -233,6 +251,34 @@ const CargoSection = ({ cargo, onChange, isDarkMode, error, unitLabels }) => {
       ))}
     </div>
   );
+};
+
+CargoSection.propTypes = {
+  cargo: PropTypes.shape({
+    pieces: PropTypes.arrayOf(
+      PropTypes.shape({
+        id: PropTypes.number.isRequired,
+        quantity: PropTypes.number,
+        weight: PropTypes.number,
+        length: PropTypes.number,
+        width: PropTypes.number,
+        height: PropTypes.number,
+        commodity: PropTypes.string,
+        cargoType: PropTypes.string,
+        stackable: PropTypes.bool,
+      })
+    ).isRequired,
+  }).isRequired,
+  onChange: PropTypes.func.isRequired,
+  isDarkMode: PropTypes.bool,
+  error: PropTypes.string,
+  unitLabels: PropTypes.shape({
+    weight: PropTypes.string,
+    length: PropTypes.string,
+    width: PropTypes.string,
+    height: PropTypes.string,
+  }),
+  unitSystem: PropTypes.oneOf(['imperial', 'metric']),
 };
 
 export default CargoSection;
