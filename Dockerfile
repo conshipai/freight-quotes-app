@@ -1,7 +1,8 @@
-FROM node:18-alpine as builder
+FROM node:18-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+# Use npm install instead of npm ci
+RUN npm install
 COPY . .
 RUN npm run build
 
