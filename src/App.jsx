@@ -23,8 +23,12 @@ function App({ shellContext }) {
     }
   }, [isDarkMode]);
 
+  // Use root basename when running standalone
+  const isStandalone = !window.shellContext;
+  const basename = isStandalone ? "/" : "/app/quotes";
+
   return (
-    <BrowserRouter basename="/app/quotes">
+    <BrowserRouter basename={basename}>
       <div className={isDarkMode ? 'dark' : ''}>
         <QuoteRouter userRole={userRole} shellContext={shellContext} />
       </div>
