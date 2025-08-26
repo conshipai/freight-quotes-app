@@ -1,43 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, Package, DollarSign, Plane, CheckCircle, Loader } from 'lucide-react';
+import { AlertCircle, Package, Plane, Search } from 'lucide-react';
 import CargoSection from '../shared/CargoSection';
 import UnitSelector from '../shared/UnitSelector';
-import { airportAPI, quoteAPI } from '../../services/api';
+import axios from 'axios';
+
+// Configure API base URL
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
 const ExportAir = ({ shellContext }) => {
   const navigate = useNavigate();
   const isDarkMode = shellContext?.isDarkMode;
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [validationStatus, setValidationStatus] = useState({
-    originAirport: null, // null, 'validating', 'valid', 'invalid'
-    destinationAirport: null,
-    pickupZip: null
+  const [airportSuggestions, setAirportSuggestions] = useState({
+    origin: [],
+    destination: []
   });
-  const [airportInfo, setAirportInfo] = useState({
-    origin: null,
-    destination: null
+  const [searchingAirports, setSearchingAirports] = useState({
+    origin: false,
+    destination: false
   });
   
   const [formData, setFormData] = useState({
-    // Origin (Door pickup)
     pickupZip: '',
-    originAirport: '', // Will be auto-resolved from ZIP
-    
-    // Destination
+    originAirport: '',
     destinationAirport: '',
-    
-    // Incoterms for Foreign Partners
-    incoterm: 'EXW', // EXW or CPT
-    
-    // Carrier selection based on incoterm
-    carriers: ['freightforce', 'pelicargo'], // Will be updated based on selection
-    
-    // Units system
-    units: 'imperial', // 'imperial' or 'metric'
-    
-    // Cargo
+    incoterm: 'EXW',
+    carriers: ['freightforce', 'pelicargo'],
+    units: 'imperial',
     cargo: {
       pieces: [{
         id: 1,
@@ -47,143 +38,55 @@ const ExportAir = ({ shellContext }) => {
         width: 0,
         height: 0,
         commodity: '',
-        stackable: true,
-        cargoType: 'General'
+        stackable: true
       }]
     },
-    
-    // Insurance
     insurance: {
       requested: false,
       value: 0
     }
   });
 
-  // Debounce timer for ZIP code lookup
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (formData.pickupZip && formData.pickupZip.length === 5 && formData.incoterm === 'EXW') {
-        lookupZipCode(formData.pickupZip);
-      }
-    }, 500); // Wait 500ms after user stops typing
-
-    return () => clearTimeout(timer);
-  }, [formData.pickupZip, formData.incoterm]);
-
-  // Validate airport codes when they change
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (formData.originAirport && formData.originAirport.length === 3 && formData.incoterm === 'CPT') {
-        validateAirportCode('origin', formData.originAirport);
-      }
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [formData.originAirport, formData.incoterm]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (formData.destinationAirport && formData.destinationAirport.length === 3) {
-        validateAirportCode('destination', formData.destinationAirport);
-      }
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [formData.destinationAirport]);
-
-  // Lookup ZIP code to get nearest airport
-  const lookupZipCode = async (zipCode) => {
-    setValidationStatus(prev => ({ ...prev, pickupZip: 'validating' }));
-    
-    try {
-      const response = await airportAPI.getNearestAirport(zipCode);
-      
-      if (response.success && response.data) {
-        setValidationStatus(prev => ({ ...prev, pickupZip: 'valid' }));
-        setAirportInfo(prev => ({
-          ...prev,
-          origin: {
-            code: response.data.airportCode,
-            city: response.data.city,
-            state: response.data.state,
-            deliveryZone: response.data.deliveryZone
-          }
-        }));
-        
-        // Clear any ZIP error
-        setErrors(prev => {
-          const newErrors = { ...prev };
-          delete newErrors.pickupZip;
-          return newErrors;
-        });
-      } else {
-        setValidationStatus(prev => ({ ...prev, pickupZip: 'invalid' }));
-        setErrors(prev => ({
-          ...prev,
-          pickupZip: `No airport found for ZIP ${zipCode}`
-        }));
-      }
-    } catch (error) {
-      setValidationStatus(prev => ({ ...prev, pickupZip: 'invalid' }));
-      setErrors(prev => ({
-        ...prev,
-        pickupZip: 'Unable to find airport for this ZIP code'
-      }));
+  // Search airports for autocomplete
+  const searchAirports = async (query, type) => {
+    if (query.length < 2) {
+      setAirportSuggestions(prev => ({ ...prev, [type]: [] }));
+      return;
     }
-  };
 
-  // Validate airport codes
-  const validateAirportCode = async (type, code) => {
-    const statusKey = type === 'origin' ? 'originAirport' : 'destinationAirport';
-    setValidationStatus(prev => ({ ...prev, [statusKey]: 'validating' }));
+    setSearchingAirports(prev => ({ ...prev, [type]: true }));
     
     try {
-      const response = await airportAPI.getAirportsByCodes(code);
-      
-      if (response.success && response.data && response.data[code]) {
-        const airport = response.data[code];
-        
-        if (!airport.error) {
-          setValidationStatus(prev => ({ ...prev, [statusKey]: 'valid' }));
-          setAirportInfo(prev => ({
-            ...prev,
-            [type]: {
-              code: airport.code,
-              name: airport.name,
-              city: airport.city,
-              fullName: airport.fullName
-            }
-          }));
-          
-          // Clear any airport error
-          setErrors(prev => {
-            const newErrors = { ...prev };
-            delete newErrors[statusKey];
-            return newErrors;
-          });
-        } else {
-          setValidationStatus(prev => ({ ...prev, [statusKey]: 'invalid' }));
-          setErrors(prev => ({
-            ...prev,
-            [statusKey]: `Airport code ${code} not found`
-          }));
+      const response = await axios.get(`${API_URL}/airports/search`, {
+        params: {
+          q: query,
+          type: type === 'origin' ? 'domestic' : 'international'
         }
+      });
+      
+      if (response.data.success) {
+        setAirportSuggestions(prev => ({
+          ...prev,
+          [type]: response.data.airports
+        }));
       }
     } catch (error) {
-      setValidationStatus(prev => ({ ...prev, [statusKey]: 'invalid' }));
-      setErrors(prev => ({
-        ...prev,
-        [statusKey]: 'Unable to validate airport code'
-      }));
+      console.error('Airport search error:', error);
+    } finally {
+      setSearchingAirports(prev => ({ ...prev, [type]: false }));
     }
   };
 
-  // Handle Unit System Change
-  const handleUnitChange = (unitSystem) => {
-    setFormData(prev => ({
-      ...prev,
-      units: unitSystem
-    }));
+  // Handle airport selection
+  const selectAirport = (airport, type) => {
+    if (type === 'origin') {
+      setFormData(prev => ({ ...prev, originAirport: airport.code }));
+      setErrors(prev => ({ ...prev, originAirport: null }));
+    } else {
+      setFormData(prev => ({ ...prev, destinationAirport: airport.code }));
+      setErrors(prev => ({ ...prev, destinationAirport: null }));
+    }
+    setAirportSuggestions(prev => ({ ...prev, [type]: [] }));
   };
 
   // Handle Incoterm change
@@ -201,21 +104,42 @@ const ExportAir = ({ shellContext }) => {
       incoterm: value,
       carriers: carriers
     }));
-    
-    // Clear certain validations when switching
-    setValidationStatus(prev => ({
-      ...prev,
-      originAirport: null,
-      pickupZip: null
-    }));
-    setAirportInfo(prev => ({
-      ...prev,
-      origin: null
-    }));
+  };
+
+  // Validate airports with backend
+  const validateAirports = async () => {
+    if (!formData.originAirport || !formData.destinationAirport) {
+      return false;
+    }
+
+    try {
+      const response = await axios.post(`${API_URL}/airports/validate`, {
+        originCode: formData.originAirport,
+        destinationCode: formData.destinationAirport
+      });
+
+      if (!response.data.success) {
+        setErrors(prev => ({
+          ...prev,
+          airports: response.data.error
+        }));
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      if (error.response?.data?.error) {
+        setErrors(prev => ({
+          ...prev,
+          airports: error.response.data.error
+        }));
+      }
+      return false;
+    }
   };
 
   // Validate form
-  const validateForm = () => {
+  const validateForm = async () => {
     const newErrors = {};
     
     if (!formData.pickupZip && formData.incoterm === 'EXW') {
@@ -227,7 +151,7 @@ const ExportAir = ({ shellContext }) => {
     }
     
     if (!formData.destinationAirport) {
-      newErrors.destination = 'Destination airport is required';
+      newErrors.destinationAirport = 'Destination airport is required';
     }
     
     if (!formData.cargo.pieces.some(p => p.weight > 0)) {
@@ -235,91 +159,125 @@ const ExportAir = ({ shellContext }) => {
     }
     
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    
+    if (Object.keys(newErrors).length > 0) {
+      return false;
+    }
+
+    // Validate airport pair if CPT
+    if (formData.incoterm === 'CPT') {
+      const airportsValid = await validateAirports();
+      if (!airportsValid) {
+        return false;
+      }
+    }
+
+    return true;
   };
 
   // Submit quote to backend
   const handleSubmit = async () => {
-    if (!validateForm()) return;
+    const isValid = await validateForm();
+    if (!isValid) return;
     
     setLoading(true);
+    setErrors({});
     
     try {
-      // Prepare the quote request data
-      const quoteData = {
-        // Origin information
-        ...(formData.incoterm === 'EXW' 
-          ? { 
-              pickupZipCode: formData.pickupZip,
-              origin: {
-                zipCode: formData.pickupZip,
-                city: airportInfo.origin?.city,
-                state: airportInfo.origin?.state,
-                airport: airportInfo.origin?.code // This will be resolved by backend
-              }
-            }
-          : { 
-              originAirport: formData.originAirport,
-              origin: {
-                airport: formData.originAirport
-              }
-            }
-        ),
-        
-        // Destination
-        destinationAirport: formData.destinationAirport,
-        destination: {
-          airport: formData.destinationAirport,
-          city: airportInfo.destination?.city
-        },
-        
-        // Cargo details
-        cargo: {
-          pieces: formData.cargo.pieces.map(p => ({
-            quantity: p.quantity,
-            weight: p.weight,
-            length: p.length,
-            width: p.width,
-            height: p.height,
-            commodity: p.commodity,
-            cargoType: p.cargoType,
-            stackable: p.stackable
-          })),
-          weightUnit: formData.units === 'imperial' ? 'lbs' : 'kg',
-          dimensionUnit: formData.units === 'imperial' ? 'in' : 'cm'
-        },
-        
-        // Service options
-        services: ['standard'],
-        carriers: formData.carriers,
-        incoterm: formData.incoterm,
-        
-        // Insurance if requested
-        ...(formData.insurance.requested && {
-          insurance: {
-            declaredValue: formData.insurance.value
+      // If EXW, get the nearest airport for the ZIP code
+      let originAirport = formData.originAirport;
+      
+      if (formData.incoterm === 'EXW' && formData.pickupZip) {
+        try {
+          const airportResponse = await axios.post(`${API_URL}/airports/nearest-airport`, {
+            zipCode: formData.pickupZip
+          });
+          
+          if (airportResponse.data.success) {
+            originAirport = airportResponse.data.airport.code;
+            console.log(`Found airport ${originAirport} for ZIP ${formData.pickupZip}`);
+          } else {
+            // If no mapping found, user must select manually
+            setErrors(prev => ({
+              ...prev,
+              pickupZip: 'No airport found for this ZIP. Please select origin airport manually.'
+            }));
+            setFormData(prev => ({ ...prev, incoterm: 'CPT' }));
+            setLoading(false);
+            return;
           }
-        }),
-        
-        // Apply markup (default true for partners)
-        applyMarkup: true
+        } catch (error) {
+          console.error('Error finding airport:', error);
+          setErrors(prev => ({
+            ...prev,
+            pickupZip: 'Could not find airport for this ZIP. Please select manually.'
+          }));
+          setLoading(false);
+          return;
+        }
+      }
+      
+      // Validate the final airport pair
+      const validateResponse = await axios.post(`${API_URL}/airports/validate`, {
+        originCode: originAirport,
+        destinationCode: formData.destinationAirport
+      });
+
+      if (!validateResponse.data.success) {
+        setErrors(prev => ({
+          ...prev,
+          airports: validateResponse.data.error
+        }));
+        setLoading(false);
+        return;
+      }
+
+      // Prepare the quote request
+      const quoteRequest = {
+        quoteType: 'export-air',
+        userRole: 'foreign_partner',
+        shipment: {
+          origin: {
+            airport: originAirport,
+            city: validateResponse.data.origin.city,
+            state: validateResponse.data.origin.state,
+            zipCode: formData.pickupZip || ''
+          },
+          destination: {
+            airport: formData.destinationAirport,
+            city: validateResponse.data.destination.city,
+            country: validateResponse.data.destination.country
+          },
+          cargo: {
+            pieces: formData.cargo.pieces.map(piece => ({
+              ...piece,
+              weightKg: formData.units === 'metric' ? piece.weight : piece.weight * 0.453592,
+              lengthCm: formData.units === 'metric' ? piece.length : piece.length * 2.54,
+              widthCm: formData.units === 'metric' ? piece.width : piece.width * 2.54,
+              heightCm: formData.units === 'metric' ? piece.height : piece.height * 2.54,
+            })),
+            totalPieces: formData.cargo.pieces.reduce((sum, p) => sum + p.quantity, 0),
+            totalWeight: formData.cargo.pieces.reduce((sum, p) => sum + (p.weight * p.quantity), 0),
+            totalWeightKg: formData.cargo.pieces.reduce((sum, p) => {
+              const weightKg = formData.units === 'metric' ? p.weight : p.weight * 0.453592;
+              return sum + (weightKg * p.quantity);
+            }, 0)
+          }
+        },
+        insurance: formData.insurance,
+        incoterm: formData.incoterm,
+        carriers: formData.carriers
       };
       
-      console.log('Submitting quote:', quoteData);
+      console.log('Submitting quote request:', quoteRequest);
       
-      // Call the backend API
-      const response = await quoteAPI.createQuote(quoteData);
+      // Submit to backend
+      const response = await axios.post(`${API_URL}/quotes/create`, quoteRequest);
       
-      if (response.success) {
-        // Show success message with quote ID
-        const quoteId = response.data?.quoteNumber || response.data?._id || 'Generated';
-        alert(`Quote ${quoteId} created successfully!`);
+      if (response.data.success) {
+        const requestNumber = response.data.data.requestNumber;
         
-        // Navigate to quote details or list
-        if (response.data?._id) {
-          // You could navigate to a quote details page here
-          // navigate(`/quotes/${response.data._id}`);
-        }
+        alert(`Quote request ${requestNumber} submitted successfully!\n\nThe system is fetching rates from carriers.`);
         
         // Reset form
         setFormData({
@@ -338,8 +296,7 @@ const ExportAir = ({ shellContext }) => {
               width: 0,
               height: 0,
               commodity: '',
-              stackable: true,
-              cargoType: 'General'
+              stackable: true
             }]
           },
           insurance: {
@@ -348,27 +305,18 @@ const ExportAir = ({ shellContext }) => {
           }
         });
         
-        setAirportInfo({ origin: null, destination: null });
-        setValidationStatus({ originAirport: null, destinationAirport: null, pickupZip: null });
-        setErrors({});
-        
       } else {
-        alert(`Failed to create quote: ${response.message || 'Unknown error'}`);
+        throw new Error(response.data.error || 'Failed to create quote');
       }
+      
     } catch (error) {
       console.error('Quote submission error:', error);
-      alert(`Error creating quote: ${error.response?.data?.message || error.message}`);
+      setErrors({ 
+        submit: error.response?.data?.error || error.message || 'Failed to create quote.' 
+      });
     } finally {
       setLoading(false);
     }
-  };
-
-  // Render validation icon
-  const renderValidationIcon = (status) => {
-    if (status === 'validating') return <Loader className="w-4 h-4 animate-spin text-blue-500" />;
-    if (status === 'valid') return <CheckCircle className="w-4 h-4 text-green-500" />;
-    if (status === 'invalid') return <AlertCircle className="w-4 h-4 text-red-500" />;
-    return null;
   };
 
   return (
@@ -477,7 +425,7 @@ const ExportAir = ({ shellContext }) => {
         {/* Origin Section */}
         <div className={`p-4 rounded-lg mb-6 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
           <h3 className={`text-lg font-medium mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            Origin Details
+            Origin Details (US Domestic)
           </h3>
           
           {formData.incoterm === 'EXW' ? (
@@ -487,50 +435,40 @@ const ExportAir = ({ shellContext }) => {
               }`}>
                 Pickup ZIP Code <span className="text-red-500">*</span>
               </label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={formData.pickupZip}
-                  onChange={(e) => setFormData({...formData, pickupZip: e.target.value})}
-                  placeholder="Enter 5-digit ZIP"
-                  maxLength="5"
-                  className={`w-full px-3 py-2 pr-10 rounded-md border ${
-                    errors.pickupZip
-                      ? 'border-red-300'
-                      : isDarkMode
-                        ? 'border-gray-600 bg-gray-800 text-white'
-                        : 'border-gray-300 bg-white'
-                  }`}
-                />
-                <div className="absolute right-2 top-2.5">
-                  {renderValidationIcon(validationStatus.pickupZip)}
-                </div>
-              </div>
-              {airportInfo.origin && (
-                <p className={`text-sm mt-2 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
-                  ✓ Nearest airport: {airportInfo.origin.code} - {airportInfo.origin.city}, {airportInfo.origin.state}
-                </p>
-              )}
-              {!airportInfo.origin && validationStatus.pickupZip !== 'invalid' && (
-                <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  We'll automatically determine the nearest airport
-                </p>
-              )}
+              <input
+                type="text"
+                value={formData.pickupZip}
+                onChange={(e) => setFormData({...formData, pickupZip: e.target.value})}
+                placeholder="Enter 5-digit ZIP"
+                maxLength="5"
+                className={`w-full px-3 py-2 rounded-md border ${
+                  errors.pickupZip
+                    ? 'border-red-300'
+                    : isDarkMode
+                      ? 'border-gray-600 bg-gray-800 text-white'
+                      : 'border-gray-300 bg-white'
+                }`}
+              />
+              <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                We'll determine the nearest airport from your database
+              </p>
             </div>
           ) : (
-            <div>
+            <div className="relative">
               <label className={`block text-sm font-medium mb-1 ${
                 isDarkMode ? 'text-gray-300' : 'text-gray-700'
               }`}>
-                Origin Airport Code <span className="text-red-500">*</span>
+                Origin Airport Code (US Only) <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <input
                   type="text"
                   value={formData.originAirport}
-                  onChange={(e) => setFormData({...formData, originAirport: e.target.value.toUpperCase()})}
-                  placeholder="e.g., JFK, LAX"
-                  maxLength="3"
+                  onChange={(e) => {
+                    setFormData({...formData, originAirport: e.target.value.toUpperCase()});
+                    searchAirports(e.target.value, 'origin');
+                  }}
+                  placeholder="Search US airports (e.g., JFK, LAX)"
                   className={`w-full px-3 py-2 pr-10 rounded-md border uppercase ${
                     errors.originAirport
                       ? 'border-red-300'
@@ -539,14 +477,28 @@ const ExportAir = ({ shellContext }) => {
                         : 'border-gray-300 bg-white'
                   }`}
                 />
-                <div className="absolute right-2 top-2.5">
-                  {renderValidationIcon(validationStatus.originAirport)}
-                </div>
+                {searchingAirports.origin && (
+                  <div className="absolute right-3 top-2.5">
+                    <div className="animate-spin h-5 w-5 border-2 border-gray-400 border-t-transparent rounded-full"></div>
+                  </div>
+                )}
               </div>
-              {airportInfo.origin && (
-                <p className={`text-sm mt-2 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
-                  ✓ {airportInfo.origin.fullName}
-                </p>
+              {airportSuggestions.origin.length > 0 && (
+                <div className={`absolute z-10 w-full mt-1 rounded-md shadow-lg ${
+                  isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border'
+                }`}>
+                  {airportSuggestions.origin.map(airport => (
+                    <button
+                      key={airport.code}
+                      onClick={() => selectAirport(airport, 'origin')}
+                      className={`w-full text-left px-3 py-2 hover:bg-gray-100 ${
+                        isDarkMode ? 'hover:bg-gray-700' : ''
+                      }`}
+                    >
+                      <span className="font-medium">{airport.code}</span> - {airport.name}, {airport.city}
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
           )}
@@ -555,38 +507,54 @@ const ExportAir = ({ shellContext }) => {
         {/* Destination Section */}
         <div className={`p-4 rounded-lg mb-6 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
           <h3 className={`text-lg font-medium mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-            Destination Details
+            Destination Details (International)
           </h3>
           
-          <div>
+          <div className="relative">
             <label className={`block text-sm font-medium mb-1 ${
               isDarkMode ? 'text-gray-300' : 'text-gray-700'
             }`}>
-              Destination Airport Code <span className="text-red-500">*</span>
+              Destination Airport Code (Non-US) <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <input
                 type="text"
                 value={formData.destinationAirport}
-                onChange={(e) => setFormData({...formData, destinationAirport: e.target.value.toUpperCase()})}
-                placeholder="e.g., LHR, CDG, NRT"
-                maxLength="3"
+                onChange={(e) => {
+                  setFormData({...formData, destinationAirport: e.target.value.toUpperCase()});
+                  searchAirports(e.target.value, 'destination');
+                }}
+                placeholder="Search international airports (e.g., LHR, CDG)"
                 className={`w-full px-3 py-2 pr-10 rounded-md border uppercase ${
-                  errors.destination
+                  errors.destinationAirport
                     ? 'border-red-300'
                     : isDarkMode
                       ? 'border-gray-600 bg-gray-800 text-white'
                       : 'border-gray-300 bg-white'
                 }`}
               />
-              <div className="absolute right-2 top-2.5">
-                {renderValidationIcon(validationStatus.destinationAirport)}
-              </div>
+              {searchingAirports.destination && (
+                <div className="absolute right-3 top-2.5">
+                  <div className="animate-spin h-5 w-5 border-2 border-gray-400 border-t-transparent rounded-full"></div>
+                </div>
+              )}
             </div>
-            {airportInfo.destination && (
-              <p className={`text-sm mt-2 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
-                ✓ {airportInfo.destination.fullName}
-              </p>
+            {airportSuggestions.destination.length > 0 && (
+              <div className={`absolute z-10 w-full mt-1 rounded-md shadow-lg ${
+                isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border'
+              }`}>
+                {airportSuggestions.destination.map(airport => (
+                  <button
+                    key={airport.code}
+                    onClick={() => selectAirport(airport, 'destination')}
+                    className={`w-full text-left px-3 py-2 hover:bg-gray-100 ${
+                      isDarkMode ? 'hover:bg-gray-700' : ''
+                    }`}
+                  >
+                    <span className="font-medium">{airport.code}</span> - {airport.name}, {airport.city}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
         </div>
@@ -594,7 +562,7 @@ const ExportAir = ({ shellContext }) => {
         {/* Unit Selector */}
         <UnitSelector 
           value={formData.units}
-          onChange={handleUnitChange}
+          onChange={(units) => setFormData({...formData, units})}
           isDarkMode={isDarkMode}
         />
 
@@ -604,7 +572,6 @@ const ExportAir = ({ shellContext }) => {
           onChange={(cargo) => setFormData({...formData, cargo})}
           isDarkMode={isDarkMode}
           error={errors.cargo}
-          unitSystem={formData.units}
         />
 
         {/* Insurance Option */}
@@ -665,7 +632,7 @@ const ExportAir = ({ shellContext }) => {
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className={`px-6 py-2 rounded-lg text-white font-medium flex items-center gap-2 ${
+            className={`px-6 py-2 rounded-lg text-white font-medium ${
               loading
                 ? 'bg-gray-400 cursor-not-allowed'
                 : isDarkMode
@@ -673,7 +640,6 @@ const ExportAir = ({ shellContext }) => {
                   : 'bg-conship-purple hover:bg-purple-800'
             }`}
           >
-            {loading && <Loader className="w-4 h-4 animate-spin" />}
             {loading ? 'Generating...' : 'Generate Quote'}
           </button>
         </div>
