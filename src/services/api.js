@@ -3,7 +3,7 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const API = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:3001/api',
+  baseURL: 'https://api.gcc.conship.ai',
   headers: {
     'Content-Type': 'application/json'
   }
