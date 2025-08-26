@@ -197,9 +197,9 @@ const ExportAir = ({ shellContext }) => {
       if (formData.incoterm === 'EXW' && formData.pickupZip) {
   try {
     const airportResponse = await axios.post(
-      `${API_URL}/airports/nearest`,
-      { zipCode: formData.pickupZip }
-    );
+  `${API_URL}/airports/nearest-airport`,  // ← Changed from /nearest
+  { zipCode: formData.pickupZip }
+);
 
     if (airportResponse.data.success) {
       originAirport = airportResponse.data.airport.code;
