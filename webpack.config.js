@@ -1,5 +1,6 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const { ModuleFederationPlugin } = require('webpack').container;
+const webpack = require('webpack');
 const path = require('path');
 
 module.exports = {
@@ -39,6 +40,10 @@ module.exports = {
     ],
   },
   plugins: [
+    new webpack.DefinePlugin({
+      'process.env': JSON.stringify({}),
+      'window.API_URL': JSON.stringify('http://localhost:3001/api')
+    }),
     new ModuleFederationPlugin({
       name: 'quotes',
       filename: 'remoteEntry.js',
