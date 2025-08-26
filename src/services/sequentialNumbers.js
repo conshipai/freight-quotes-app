@@ -1,4 +1,8 @@
 // src/services/sequentialNumbers.js
+import axios from 'axios';
+
+const API_URL = process.env.REACT_APP_API_URL || 'aip.gcc.conship.ai/api';
+
 const getNextSequentialNumber = async (type = 'REQ') => {
   try {
     const response = await axios.post(`${API_URL}/sequences/next`, {
@@ -25,3 +29,5 @@ export const generateQuoteNumbers = async () => {
     costId: `C-${year}-${sequenceNumber}`
   };
 };
+
+export default getNextSequentialNumber;
