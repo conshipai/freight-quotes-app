@@ -158,6 +158,16 @@ const ExportAir = ({ shellContext }) => {
     if (!formData.pickupZip && formData.incoterm === 'EXW') {
       newErrors.pickupZip = 'Pickup ZIP code is required';
     }
+    
+    // If there's already a ZIP error (outside pickup area), keep it
+    if (errors.pickupZip && formData.incoterm === 'EXW') {
+      newErrors.pickupZip = errors.pickupZip;
+    }
+    
+    // If EXW mode with ZIP but no airport found
+    if (formData.incoterm === 'EXW' && formData.pickupZip && !formData.originAirport) {
+      newErrors.pickupZip = `Pickup ZIP ${formData.pickupZip} is outside normal pickup areas. Please contact operations for a custom quote.`;
+    }
 
     if (!formData.originAirport && formData.incoterm === 'CPT') {
       newErrors.originAirport = 'Origin airport is required';
@@ -466,6 +476,11 @@ const ExportAir = ({ shellContext }) => {
                   const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 5);
                   setFormData({ ...formData, pickupZip: digitsOnly });
                   
+                  // Clear any previous ZIP errors when typing
+                  if (errors.pickupZip) {
+                    setErrors(prev => ({ ...prev, pickupZip: null }));
+                  }
+                  
                   // Auto-lookup when 5 digits entered
                   if (digitsOnly.length === 5) {
                     try {
@@ -484,9 +499,38 @@ const ExportAir = ({ shellContext }) => {
                           ...prev, 
                           origin: foundAirport 
                         }));
+                        // Clear any errors on success
+                        setErrors(prev => ({ ...prev, pickupZip: null }));
+                      } else {
+                        // No airport found for this ZIP
+                        setFormData(prev => ({ 
+                          ...prev, 
+                          originAirport: '' 
+                        }));
+                        setSelectedAirports(prev => ({ 
+                          ...prev, 
+                          origin: null 
+                        }));
+                        setErrors(prev => ({ 
+                          ...prev, 
+                          pickupZip: `Pickup ZIP ${digitsOnly} is outside normal pickup areas. Please contact operations for a custom quote.` 
+                        }));
                       }
                     } catch (error) {
                       console.error('Error finding airport:', error);
+                      // Handle API error
+                      setFormData(prev => ({ 
+                        ...prev, 
+                        originAirport: '' 
+                      }));
+                      setSelectedAirports(prev => ({ 
+                        ...prev, 
+                        origin: null 
+                      }));
+                      setErrors(prev => ({ 
+                        ...prev, 
+                        pickupZip: `Pickup ZIP ${digitsOnly} is outside normal pickup areas. Please contact operations for a custom quote.` 
+                      }));
                     }
                   } else {
                     // Clear airport if ZIP incomplete
@@ -511,7 +555,18 @@ const ExportAir = ({ shellContext }) => {
                 }`}
               />
               {errors.pickupZip && (
-                <p className="text-red-500 text-xs mt-1">{errors.pickupZip}</p>
+                <div className={`mt-2 p-2 rounded flex items-start gap-2 ${
+                  isDarkMode 
+                    ? 'bg-red-900/20 border border-red-800' 
+                    : 'bg-red-50 border border-red-200'
+                }`}>
+                  <AlertCircle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
+                    isDarkMode ? 'text-red-400' : 'text-red-600'
+                  }`} />
+                  <p className={`text-sm ${isDarkMode ? 'text-red-400' : 'text-red-700'}`}>
+                    {errors.pickupZip}
+                  </p>
+                </div>
               )}
               
               {/* Display found airport immediately after ZIP entry */}
