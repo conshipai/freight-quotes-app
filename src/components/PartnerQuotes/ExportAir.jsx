@@ -89,11 +89,21 @@ const ExportAir = ({ shellContext }) => {
     if (type === 'origin') {
       setFormData(prev => ({ ...prev, originAirport: (airport.code || '').toUpperCase() }));
       setSelectedAirports(prev => ({ ...prev, origin: airport }));
-      setErrors(prev => ({ ...prev, originAirport: null }));
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.originAirport;
+        delete newErrors.airports;
+        return newErrors;
+      });
     } else {
       setFormData(prev => ({ ...prev, destinationAirport: (airport.code || '').toUpperCase() }));
       setSelectedAirports(prev => ({ ...prev, destination: airport }));
-      setErrors(prev => ({ ...prev, destinationAirport: null }));
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.destinationAirport;
+        delete newErrors.airports;
+        return newErrors;
+      });
     }
     setAirportSuggestions(prev => ({ ...prev, [type]: [] }));
   };
@@ -364,7 +374,7 @@ const ExportAir = ({ shellContext }) => {
         </h2>
 
         {/* Error Display */}
-        {Object.keys(errors).length > 0 && (
+        {Object.keys(errors).length > 0 && Object.values(errors).some(e => e) && (
           <div className={`mb-6 p-4 rounded-lg ${
             isDarkMode ? 'bg-red-900/20 border border-red-800' : 'bg-red-50 border border-red-200'
           }`}>
@@ -375,7 +385,7 @@ const ExportAir = ({ shellContext }) => {
                   Please fix the following errors:
                 </h3>
                 <ul className="mt-2 text-sm list-disc pl-5">
-                  {Object.values(errors).map((error, idx) => (
+                  {Object.values(errors).filter(error => error).map((error, idx) => (
                     <li key={idx} className={isDarkMode ? 'text-red-400' : 'text-red-700'}>
                       {error}
                     </li>
@@ -478,7 +488,11 @@ const ExportAir = ({ shellContext }) => {
                   
                   // Clear any previous ZIP errors when typing
                   if (errors.pickupZip) {
-                    setErrors(prev => ({ ...prev, pickupZip: null }));
+                    setErrors(prev => {
+                      const newErrors = { ...prev };
+                      delete newErrors.pickupZip;
+                      return newErrors;
+                    });
                   }
                   
                   // Auto-lookup when 5 digits entered
@@ -500,7 +514,11 @@ const ExportAir = ({ shellContext }) => {
                           origin: foundAirport 
                         }));
                         // Clear any errors on success
-                        setErrors(prev => ({ ...prev, pickupZip: null }));
+                        setErrors(prev => {
+                          const newErrors = { ...prev };
+                          delete newErrors.pickupZip;
+                          return newErrors;
+                        });
                       } else {
                         // No airport found for this ZIP
                         setFormData(prev => ({ 
@@ -609,6 +627,15 @@ const ExportAir = ({ shellContext }) => {
                   setFormData({...formData, originAirport: e.target.value.toUpperCase()});
                   setSelectedAirports(prev => ({ ...prev, origin: null }));
                   searchAirports(e.target.value, 'origin');
+                  // Clear any airport-related errors when typing
+                  if (errors.originAirport || errors.airports) {
+                    setErrors(prev => {
+                      const newErrors = { ...prev };
+                      delete newErrors.originAirport;
+                      delete newErrors.airports;
+                      return newErrors;
+                    });
+                  }
                 }}
                 placeholder="Search US airports (e.g., JFK, LAX)"
                 className={`w-full px-3 py-2 pr-10 rounded-md border uppercase ${
@@ -690,6 +717,15 @@ const ExportAir = ({ shellContext }) => {
                   setFormData({...formData, destinationAirport: e.target.value.toUpperCase()});
                   setSelectedAirports(prev => ({ ...prev, destination: null }));
                   searchAirports(e.target.value, 'destination');
+                  // Clear any airport-related errors when typing
+                  if (errors.destinationAirport || errors.airports) {
+                    setErrors(prev => {
+                      const newErrors = { ...prev };
+                      delete newErrors.destinationAirport;
+                      delete newErrors.airports;
+                      return newErrors;
+                    });
+                  }
                 }}
                 placeholder="Search international airports (e.g., LHR, CDG)"
                 className={`w-full px-3 py-2 pr-10 rounded-md border uppercase ${
