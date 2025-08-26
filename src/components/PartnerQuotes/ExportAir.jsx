@@ -547,22 +547,24 @@ const ExportAir = ({ shellContext }) => {
               )}
             </div>
             {airportSuggestions.destination.length > 0 && (
-              <div className={`absolute z-10 w-full mt-1 rounded-md shadow-lg ${
-                isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border'
-              }`}>
-                {airportSuggestions.destination.map(airport => (
-                  <button
-                    key={airport.code}
-                    onClick={() => selectAirport(airport, 'destination')}
-                    className={`w-full text-left px-3 py-2 hover:bg-gray-100 ${
-                      isDarkMode ? 'hover:bg-gray-700' : ''
-                    }`}
-                  >
-                    <span className="font-medium">{airport.code}</span> - {airport.name}, {airport.city}
-                  </button>
-                ))}
-              </div>
-            )}
+  <div className={`absolute z-10 w-full mt-1 rounded-md shadow-lg ${
+    isDarkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border'
+  }`}>
+    {airportSuggestions.destination.map(airport => (
+      <button
+        key={airport.code}
+        onClick={() => selectAirport(airport, 'destination')}
+        className={`w-full text-left px-3 py-2 hover:bg-gray-100 ${
+          isDarkMode ? 'hover:bg-gray-700' : ''
+        }`}
+      >
+        <span className="font-medium">{airport.code}</span> - {airport.name}
+        {airport.city && `, ${airport.city}`}
+        {airport.country && ` (${airport.country})`}
+      </button>
+    ))}
+  </div>
+)}
           </div>
         </div>
 
