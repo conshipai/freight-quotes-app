@@ -101,74 +101,79 @@ const BatteryDetailsForm = ({ shellContext }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // 🔹 UPDATED handleSubmit with SDS upload to R2
-  const handleSubmit = async () => {
-    if (!validateForm()) return;
+const handleSubmit = async () => {
+  if (!validateForm()) return;
 
-    setLoading(true);
-    try {
-      // STEP 1: Generate reference numbers FIRST
-      const { requestId, quoteId, costId } = await generateQuoteNumbers();
+  setLoading(true);
+  try {
+    // STEP 1: Get IDs from SERVER
+    const initRes = await axios.post(`${API_URL}/quotes/init`, { 
+      quoteType: 'export-air' 
+    });
+    
+    if (!initRes.data?.success) {
+      throw new Error('Failed to initialize quote');
+    }
+
+    const { requestId, quoteId, costId } = initRes.data;
+
+    // STEP 2: Upload SDS if DG mode
+    let sdsFileUrl = null;
+    if (batteryData.mode === 'dg' && batteryData.sdsFile?.file) {
+      const formData = new FormData();
+      formData.append('file', batteryData.sdsFile.file);
+      formData.append('requestId', requestId);  // Server-issued ID
+      formData.append('documentType', 'battery-sds');
+
+      const uploadResponse = await axios.post(`${API_URL}/storage/upload`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       
-      // STEP 2: Upload SDS file to R2 with proper path using reference number
-      let sdsFileUrl = null;
-      if (batteryData.sdsFile) {
-        const formData = new FormData();
-        formData.append('file', batteryData.sdsFile.file);
-        formData.append('requestId', requestId);
-        formData.append('documentType', 'battery-sds');
-        
-        const uploadResponse = await axios.post(`${API_URL}/storage/upload`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        });
-        
-        sdsFileUrl = uploadResponse.data.fileUrl;
-      }
-      
-      // STEP 3: Submit the complete quote with file URL
-      const completeQuoteData = {
-        ...mainQuoteData,
-        batteryDetails: {
-          ...batteryData,
-          sdsFileUrl: sdsFileUrl,
-          sdsFileName: batteryData.sdsFile?.name
-        },
-        ids: {
+      sdsFileUrl = uploadResponse.data.fileUrl;
+    }
+
+    // STEP 3: Submit the complete quote
+    const completeQuoteData = {
+      ...mainQuoteData,
+      batteryDetails: {
+        ...batteryData,
+        sdsFileUrl,
+        sdsFileName: batteryData.sdsFile?.name || ''
+      },
+      ids: { requestId, quoteId, costId }
+    };
+
+    const response = await axios.post(`${API_URL}/quotes/create`, {
+      ...completeQuoteData,
+      quoteType: 'export-air',
+      userRole: 'foreign_partner',
+      hasBatteries: true
+    });
+
+    if (response.data.success) {
+      localStorage.removeItem('tempQuoteData');
+      localStorage.removeItem('tempBatteryData');
+
+      navigate('/quotes/pending', {
+        state: {
           requestId,
           quoteId,
-          costId
+          origin: mainQuoteData.originAirport,
+          destination: mainQuoteData.destinationAirport
         }
-      };
-
-      const response = await axios.post(`${API_URL}/quotes/create`, {
-        ...completeQuoteData,
-        quoteType: 'export-air',
-        userRole: 'foreign_partner',
-        hasBatteries: true
       });
-
-      if (response.data.success) {
-        localStorage.removeItem('tempQuoteData');
-        localStorage.removeItem('tempBatteryData');
-
-        navigate('/quotes/pending', {
-          state: {
-            requestId,
-            quoteId,
-            origin: mainQuoteData.originAirport,
-            destination: mainQuoteData.destinationAirport
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Submit error:', error);
-      setErrors({ submit: error.response?.data?.message || 'Failed to submit quote' });
-    } finally {
-      setLoading(false);
+    } else {
+      throw new Error(response.data?.message || 'Quote creation failed');
     }
-  };
+  } catch (error) {
+    console.error('Submit error:', error);
+    setErrors({ 
+      submit: error.response?.data?.message || error.message || 'Failed to submit quote' 
+    });
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleBack = () => {
     localStorage.setItem('tempBatteryData', JSON.stringify(batteryData));
