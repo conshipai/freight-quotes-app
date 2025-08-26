@@ -1,33 +1,28 @@
-// src/services/sequentialNumbers.js
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'aip.gcc.conship.ai/api';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
-const getNextSequentialNumber = async (type = 'REQ') => {
+// Get IDs from server - used for DG and Battery forms
+export const initializeQuote = async (quoteType = 'export-air') => {
   try {
-    const response = await axios.post(`${API_URL}/sequences/next`, {
-      type: type,
-      year: new Date().getFullYear()
+    const response = await axios.post(`${API_URL}/quotes/init`, { 
+      quoteType 
     });
     
-    return response.data.number; // e.g., "REQ-2025-10001"
+    if (!response.data?.success) {
+      throw new Error('Failed to initialize quote');
+    }
+    
+    return {
+      requestId: response.data.requestId,
+      quoteId: response.data.quoteId,
+      costId: response.data.costId
+    };
   } catch (error) {
-    console.error('Failed to get sequential number:', error);
-    // Fallback to timestamp-based ID
-    return `${type}-${new Date().getFullYear()}-${Date.now()}`;
+    console.error('Failed to initialize quote:', error);
+    throw error;
   }
 };
 
-export const generateQuoteNumbers = async () => {
-  const baseNumber = await getNextSequentialNumber('REQ');
-  const sequenceNumber = baseNumber.split('-')[2]; // Extract "10001"
-  const year = new Date().getFullYear();
-  
-  return {
-    requestId: `REQ-${year}-${sequenceNumber}`,
-    quoteId: `Q-${year}-${sequenceNumber}`,
-    costId: `C-${year}-${sequenceNumber}`
-  };
-};
-
-export default getNextSequentialNumber;
+// Legacy function name for compatibility - redirects to new function
+export const generateQuoteNumbers = initializeQuote;
