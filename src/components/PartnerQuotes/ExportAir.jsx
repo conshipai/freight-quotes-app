@@ -4,9 +4,10 @@ import { AlertCircle, Package, Plane, Search } from 'lucide-react';
 import CargoSection from '../shared/CargoSection';
 import UnitSelector from '../shared/UnitSelector';
 import axios from 'axios';
+import config from '../../config/api';
 
 // Configure API base URL
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+const API_URL = config.API_URL;
 
 const ExportAir = ({ shellContext }) => {
   const navigate = useNavigate();
