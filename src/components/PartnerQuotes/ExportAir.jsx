@@ -491,23 +491,38 @@ const ExportAir = ({ shellContext }) => {
                 Origin Airport Code (US Only) <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <input
-                  type="text"
-                  value={formData.originAirport}
-                  onChange={(e) => {
-                    setFormData({ ...formData, originAirport: e.target.value.toUpperCase() });
-                    setSelectedAirports(prev => ({ ...prev, origin: null }));
-                    searchAirports(e.target.value, 'origin');
-                  }}
-                  placeholder="Search US airports (e.g., JFK, LAX)"
-                  className={`w-full px-3 py-2 pr-10 rounded-md border uppercase ${
-                    errors.originAirport
-                      ? 'border-red-300'
-                      : isDarkMode
-                        ? 'border-gray-600 bg-gray-800 text-white'
-                        : 'border-gray-300 bg-white'
-                  }`}
-                />
+               <input
+  type="text"
+  value={formData.pickupZip}
+  onChange={(e) => {
+    const zip = e.target.value;
+    setFormData({...formData, pickupZip: zip});
+    
+    // Lookup airport when ZIP is 5 digits
+    if (zip.length === 5) {
+      axios.post(`${API_URL}/airports/nearest-airport`, { zipCode: zip })
+        .then(response => {
+          if (response.data.success && response.data.airport) {
+            console.log('Found airport for ZIP:', response.data.airport);
+            // Optionally show it to user
+            alert(`Found: ${response.data.airport.code} - ${response.data.airport.city}, ${response.data.airport.state}`);
+          }
+        })
+        .catch(error => {
+          console.error('ZIP lookup error:', error);
+        });
+    }
+  }}
+  placeholder="Enter 5-digit ZIP"
+  maxLength="5"
+  className={`w-full px-3 py-2 rounded-md border ${
+    errors.pickupZip
+      ? 'border-red-300'
+      : isDarkMode
+        ? 'border-gray-600 bg-gray-800 text-white'
+        : 'border-gray-300 bg-white'
+  }`}
+/>
                 {searchingAirports.origin && (
                   <div className="absolute right-3 top-2.5">
                     <div className="animate-spin h-5 w-5 border-2 border-gray-400 border-t-transparent rounded-full"></div>
