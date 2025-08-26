@@ -47,35 +47,42 @@ const ExportAir = ({ shellContext }) => {
     }
   });
 
-  // Search airports for autocomplete
-  const searchAirports = async (query, type) => {
-    if (query.length < 2) {
-      setAirportSuggestions(prev => ({ ...prev, [type]: [] }));
-      return;
-    }
+ const searchAirports = async (query, type) => {
+  const q = (query || '').trim();
+  if (q.length < 2) {
+    setAirportSuggestions(prev => ({ ...prev, [type]: [] }));
+    return;
+  }
 
-    setSearchingAirports(prev => ({ ...prev, [type]: true }));
-    
-    try {
-      const response = await axios.get(`${API_URL}/airports/search`, {
-        params: {
-          q: query,
-          type: type === 'origin' ? 'domestic' : 'international'
-        }
-      });
-      
-      if (response.data.success) {
-        setAirportSuggestions(prev => ({
-          ...prev,
-          [type]: response.data.airports
-        }));
+  setSearchingAirports(prev => ({ ...prev, [type]: true }));
+
+  try {
+    console.log('Searching airports:', { query: q, type }); // Debug log
+
+    const response = await axios.get(`${API_URL}/airports/search`, {
+      params: {
+        q,
+        type: type === 'origin' ? 'domestic' : 'international'
       }
-    } catch (error) {
-      console.error('Airport search error:', error);
-    } finally {
-      setSearchingAirports(prev => ({ ...prev, [type]: false }));
+    });
+
+    console.log('Airport search response:', response.data); // Debug log
+
+    if (response.data?.success) {
+      setAirportSuggestions(prev => ({
+        ...prev,
+        [type]: response.data.airports || []
+      }));
+    } else {
+      setAirportSuggestions(prev => ({ ...prev, [type]: [] }));
     }
-  };
+  } catch (error) {
+    console.error('Airport search error:', error);
+    setAirportSuggestions(prev => ({ ...prev, [type]: [] }));
+  } finally {
+    setSearchingAirports(prev => ({ ...prev, [type]: false }));
+  }
+};
 
   // Handle airport selection
   const selectAirport = (airport, type) => {
