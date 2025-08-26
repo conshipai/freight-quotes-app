@@ -195,35 +195,35 @@ const ExportAir = ({ shellContext }) => {
       let originAirport = formData.originAirport;
       
       if (formData.incoterm === 'EXW' && formData.pickupZip) {
-        try {
-          const airportResponse = await axios.post(`${API_URL}/airports/nearest`, { zipCode: formData.pickupZip });
-            zipCode: formData.pickupZip
-          });
-          
-          if (airportResponse.data.success) {
-            originAirport = airportResponse.data.airport.code;
-            console.log(`Found airport ${originAirport} for ZIP ${formData.pickupZip}`);
-          } else {
-            // If no mapping found, user must select manually
-            setErrors(prev => ({
-              ...prev,
-              pickupZip: 'No airport found for this ZIP. Please select origin airport manually.'
-            }));
-            setFormData(prev => ({ ...prev, incoterm: 'CPT' }));
-            setLoading(false);
-            return;
-          }
-        } catch (error) {
-          console.error('Error finding airport:', error);
-          setErrors(prev => ({
-            ...prev,
-            pickupZip: 'Could not find airport for this ZIP. Please select manually.'
-          }));
-          setLoading(false);
-          return;
-        }
-      }
-      
+  try {
+    const airportResponse = await axios.post(
+      `${API_URL}/airports/nearest`,
+      { zipCode: formData.pickupZip }
+    );
+
+    if (airportResponse.data.success) {
+      originAirport = airportResponse.data.airport.code;
+      console.log(`Found airport ${originAirport} for ZIP ${formData.pickupZip}`);
+    } else {
+      // If no mapping found, user must select manually
+      setErrors(prev => ({
+        ...prev,
+        pickupZip: 'No airport found for this ZIP. Please select origin airport manually.'
+      }));
+      setFormData(prev => ({ ...prev, incoterm: 'CPT' }));
+      setLoading(false);
+      return;
+    }
+  } catch (error) {
+    console.error('Error finding airport:', error);
+    setErrors(prev => ({
+      ...prev,
+      pickupZip: 'Could not find airport for this ZIP. Please select manually.'
+    }));
+    setLoading(false);
+    return;
+  }
+}
       // Validate the final airport pair
       const validateResponse = await axios.post(`${API_URL}/airports/validate`, {
         originCode: originAirport,
