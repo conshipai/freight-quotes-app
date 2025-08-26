@@ -1,7 +1,6 @@
-// src/services/api/client.js
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+const API_URL = 'https://api.gcc.conship.ai/api';
 
 export const apiClient = axios.create({
   baseURL: API_URL,
@@ -10,7 +9,6 @@ export const apiClient = axios.create({
   }
 });
 
-// Optional: Add response/request interceptors for error handling
 apiClient.interceptors.response.use(
   response => response.data,
   error => {
