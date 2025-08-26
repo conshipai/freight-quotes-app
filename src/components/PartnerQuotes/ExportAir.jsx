@@ -461,7 +461,7 @@ const ExportAir = ({ shellContext }) => {
               </label>
               <input
                 type="text"
-                value={formData.pickupZip}
+                value={formData.originAirport}
                 onChange={(e) => {
                   const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 5);
                   setFormData({ ...formData, pickupZip: digitsOnly });
@@ -495,7 +495,7 @@ const ExportAir = ({ shellContext }) => {
   type="text"
   value={formData.pickupZip}
   onChange={(e) => {
-    const zip = e.target.value;
+    const zip = e.target.value.replace(/\D/g, '').slice(0, 5);
     setFormData({...formData, pickupZip: zip});
     
     // Lookup airport when ZIP is 5 digits
@@ -504,7 +504,6 @@ const ExportAir = ({ shellContext }) => {
         .then(response => {
           if (response.data.success && response.data.airport) {
             console.log('Found airport for ZIP:', response.data.airport);
-            // Optionally show it to user
             alert(`Found: ${response.data.airport.code} - ${response.data.airport.city}, ${response.data.airport.state}`);
           }
         })
@@ -591,9 +590,9 @@ const ExportAir = ({ shellContext }) => {
                 type="text"
                 value={formData.destinationAirport}
                 onChange={(e) => {
-                  setFormData({ ...formData, destinationAirport: e.target.value.toUpperCase() });
-                  setSelectedAirports(prev => ({ ...prev, destination: null }));
-                  searchAirports(e.target.value, 'destination');
+                  setFormData({...formData, originAirport: e.target.value.toUpperCase()});
+                  setSelectedAirports(prev => ({ ...prev, origin: null }));
+                  searchAirports(e.target.value, 'origin');
                 }}
                 placeholder="Search international airports (e.g., LHR, CDG)"
                 className={`w-full px-3 py-2 pr-10 rounded-md border uppercase ${
