@@ -117,55 +117,79 @@ const DangerousGoodsForm = ({ shellContext }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async () => {
-    if (!validateForm()) return;
+const handleSubmit = async () => {
+  if (!validateForm()) return;
 
-    setLoading(true);
-    try {
-      // Generate sequential numbers
-      const { requestId, quoteId, costId } = await generateQuoteNumbers();
+  setLoading(true);
+  try {
+    // STEP 1: Get IDs from SERVER (not client-side)
+    const initRes = await axios.post(`${API_URL}/quotes/init`, { 
+      quoteType: 'export-air' 
+    });
+    
+    if (!initRes.data?.success) {
+      throw new Error('Failed to initialize quote');
+    }
 
-      // Combine all data
-      const completeQuoteData = {
-        ...mainQuoteData,
-        dangerousGoods: dgData,
-        ids: {
+    const { requestId, quoteId, costId } = initRes.data;
+
+    // STEP 2: Upload SDS to R2 with server-issued requestId
+    let sdsFileUrl = null;
+    if (dgData.sdsFile?.file) {
+      const formData = new FormData();
+      formData.append('file', dgData.sdsFile.file);
+      formData.append('requestId', requestId);  // Server-issued ID
+      formData.append('documentType', 'dg-sds');
+
+      const uploadResponse = await axios.post(`${API_URL}/storage/upload`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      sdsFileUrl = uploadResponse.data.fileUrl;
+    }
+
+    // STEP 3: Submit the complete quote
+    const completeQuoteData = {
+      ...mainQuoteData,
+      dangerousGoods: {
+        ...dgData,
+        sdsFileUrl,
+        sdsFileName: dgData.sdsFile?.name || ''
+      },
+      ids: { requestId, quoteId, costId }
+    };
+
+    const response = await axios.post(`${API_URL}/quotes/create`, {
+      ...completeQuoteData,
+      quoteType: 'export-air',
+      userRole: 'foreign_partner',
+      hasDangerousGoods: true
+    });
+
+    if (response.data.success) {
+      localStorage.removeItem('tempQuoteData');
+      localStorage.removeItem('tempDGData');
+
+      navigate('/quotes/pending', {
+        state: {
           requestId,
           quoteId,
-          costId
+          origin: mainQuoteData.originAirport,
+          destination: mainQuoteData.destinationAirport
         }
-      };
-
-      // Submit the quote
-      const response = await axios.post(`${API_URL}/quotes/create`, {
-        ...completeQuoteData,
-        quoteType: 'export-air',
-        userRole: 'foreign_partner',
-        hasDangerousGoods: true
       });
-
-      if (response.data.success) {
-        // Clear temp storage
-        localStorage.removeItem('tempQuoteData');
-        localStorage.removeItem('tempDGData');
-
-        // Navigate to pending results page
-        navigate('/quotes/pending', {
-          state: {
-            requestId,
-            quoteId,
-            origin: mainQuoteData.originAirport,
-            destination: mainQuoteData.destinationAirport
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Submit error:', error);
-      setErrors({ submit: error.response?.data?.message || 'Failed to submit quote' });
-    } finally {
-      setLoading(false);
+    } else {
+      throw new Error(response.data?.message || 'Quote creation failed');
     }
-  };
+  } catch (error) {
+    console.error('Submit error:', error);
+    setErrors({ 
+      submit: error.response?.data?.message || error.message || 'Failed to submit quote' 
+    });
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleBack = () => {
     // Save current state before going back
