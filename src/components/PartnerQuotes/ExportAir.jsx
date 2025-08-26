@@ -243,15 +243,27 @@ const ExportAir = ({ shellContext }) => {
           cargo: {
             pieces: formData.cargo.pieces.map(piece => ({
               ...piece,
-              weightKg: formData.units === 'metric' ? Number(piece.weight) : Number(piece.weight) * 0.453592,
-              lengthCm: formData.units === 'metric' ? Number(piece.length) : Number(piece.length) * 2.54,
-              widthCm: formData.units === 'metric' ? Number(piece.width) : Number(piece.width) * 2.54,
-              heightCm: formData.units === 'metric' ? Number(piece.height) : Number(piece.height) * 2.54,
+              // Values are already in the unit system selected by user
+              // Convert to metric for API if needed
+              weightKg: formData.units === 'metric' 
+                ? Number(piece.weight || 0) 
+                : Number(piece.weight || 0) * 0.453592,
+              lengthCm: formData.units === 'metric' 
+                ? Number(piece.length || 0) 
+                : Number(piece.length || 0) * 2.54,
+              widthCm: formData.units === 'metric' 
+                ? Number(piece.width || 0) 
+                : Number(piece.width || 0) * 2.54,
+              heightCm: formData.units === 'metric' 
+                ? Number(piece.height || 0) 
+                : Number(piece.height || 0) * 2.54,
             })),
             totalPieces: formData.cargo.pieces.reduce((sum, p) => sum + Number(p.quantity || 0), 0),
             totalWeight: formData.cargo.pieces.reduce((sum, p) => sum + (Number(p.weight || 0) * Number(p.quantity || 0)), 0),
             totalWeightKg: formData.cargo.pieces.reduce((sum, p) => {
-              const weightKg = formData.units === 'metric' ? Number(p.weight || 0) : Number(p.weight || 0) * 0.453592;
+              const weightKg = formData.units === 'metric' 
+                ? Number(p.weight || 0) 
+                : Number(p.weight || 0) * 0.453592;
               return sum + (weightKg * Number(p.quantity || 0));
             }, 0)
           }
@@ -383,6 +395,7 @@ const ExportAir = ({ shellContext }) => {
         <CargoSection
           cargo={formData.cargo}
           onChange={handleCargoChange}
+          units={formData.units}
           isDarkMode={isDarkMode}
           error={errors.cargo}
         />
