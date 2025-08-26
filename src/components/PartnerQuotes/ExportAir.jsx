@@ -22,7 +22,10 @@ const ExportAir = ({ shellContext }) => {
     incoterm: 'EXW', // EXW or CPT
     
     // Carrier selection based on incoterm
-    carriers: [], // Will be Freightforce, Pelicargo based on selection
+    carriers: ['freightforce', 'pelicargo'], // Will be updated based on selection
+    
+    // Units system - ADDED
+    units: 'imperial', // 'imperial' or 'metric'
     
     // Cargo
     cargo: {
@@ -34,7 +37,8 @@ const ExportAir = ({ shellContext }) => {
         width: 0,
         height: 0,
         commodity: '',
-        stackable: true
+        stackable: true,
+        cargoType: 'General' // Added default cargo type
       }]
     },
     
@@ -44,6 +48,14 @@ const ExportAir = ({ shellContext }) => {
       value: 0
     }
   });
+
+  // Handle Unit System Change - ADDED
+  const handleUnitChange = (unitSystem) => {
+    setFormData(prev => ({
+      ...prev,
+      units: unitSystem
+    }));
+  };
 
   // Handle Incoterm change
   const handleIncotermChange = (value) => {
@@ -115,6 +127,7 @@ const ExportAir = ({ shellContext }) => {
         destinationAirport: '',
         incoterm: 'EXW',
         carriers: ['freightforce', 'pelicargo'],
+        units: 'imperial',
         cargo: {
           pieces: [{
             id: 1,
@@ -124,7 +137,8 @@ const ExportAir = ({ shellContext }) => {
             width: 0,
             height: 0,
             commodity: '',
-            stackable: true
+            stackable: true,
+            cargoType: 'General'
           }]
         },
         insurance: {
@@ -326,19 +340,20 @@ const ExportAir = ({ shellContext }) => {
           </div>
         </div>
 
-        {/* Unit Selector */}
+        {/* Unit Selector - PROPERLY CONNECTED */}
         <UnitSelector 
           value={formData.units}
-          onChange={(units) => setFormData({...formData, units})}
+          onChange={handleUnitChange}
           isDarkMode={isDarkMode}
         />
 
-        {/* Cargo Section */}
+        {/* Cargo Section - PROPERLY CONNECTED WITH UNIT SYSTEM */}
         <CargoSection 
           cargo={formData.cargo}
           onChange={(cargo) => setFormData({...formData, cargo})}
           isDarkMode={isDarkMode}
           error={errors.cargo}
+          unitSystem={formData.units} // Pass the unit system
         />
 
         {/* Insurance Option */}
