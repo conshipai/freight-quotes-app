@@ -9,11 +9,11 @@ RUN npm install
 # Copy all project files
 COPY . .
 
-# Accept build arguments from Coolify
-ARG REACT_APP_API_URL
+# Use build argument with a default value
+ARG REACT_APP_API_URL=https://api.gcc.conship.ai/api
 ARG NODE_ENV=production
 
-# Export them as environment variables for the webpack build
+# Set as environment variable for the build
 ENV REACT_APP_API_URL=$REACT_APP_API_URL
 ENV NODE_ENV=$NODE_ENV
 
