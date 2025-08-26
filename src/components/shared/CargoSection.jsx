@@ -1,6 +1,5 @@
 // src/components/shared/CargoSection.jsx
 import React, { useMemo } from 'react';
-import PropTypes from 'prop-types';
 import { Plus, X, Package } from 'lucide-react';
 
 const CARGO_TYPES = ['General', 'Batteries', 'Dangerous Goods'];
@@ -16,19 +15,21 @@ const COMMODITY_OPTIONS = [
   'Other products',
 ];
 
-const UNIT_PRESETS = {
-  imperial: {
-    weight: 'Weight (lbs)',
-    length: 'Length (in)',
-    width: 'Width (in)',
-    height: 'Height (in)',
-  },
-  metric: {
-    weight: 'Weight (kg)',
-    length: 'Length (cm)',
-    width: 'Width (cm)',
-    height: 'Height (cm)',
-  },
+// Unit conversion helpers
+const convertWeight = (value, fromUnit, toUnit) => {
+  if (!value || value === 0) return 0;
+  if (fromUnit === toUnit) return value;
+  if (fromUnit === 'lbs' && toUnit === 'kg') return value * 0.453592;
+  if (fromUnit === 'kg' && toUnit === 'lbs') return value * 2.20462;
+  return value;
+};
+
+const convertDimension = (value, fromUnit, toUnit) => {
+  if (!value || value === 0) return 0;
+  if (fromUnit === toUnit) return value;
+  if (fromUnit === 'inches' && toUnit === 'cm') return value * 2.54;
+  if (fromUnit === 'cm' && toUnit === 'inches') return value / 2.54;
+  return value;
 };
 
 const CargoSection = ({
@@ -36,17 +37,24 @@ const CargoSection = ({
   onChange,
   isDarkMode,
   error,
-  unitLabels,
   unitSystem = 'imperial',
 }) => {
+  const isImperial = unitSystem === 'imperial';
+  const weightUnit = isImperial ? 'lbs' : 'kg';
+  const dimensionUnit = isImperial ? 'in' : 'cm';
+
   const addPiece = () => {
     const newPiece = {
       id: Date.now(),
       quantity: 1,
       weight: 0,
+      weightKg: 0,
       length: 0,
       width: 0,
       height: 0,
+      lengthCm: 0,
+      widthCm: 0,
+      heightCm: 0,
       commodity: '',
       cargoType: 'General',
       stackable: true,
@@ -57,12 +65,6 @@ const CargoSection = ({
     });
   };
 
-  // Decide labels: unitLabels (highest priority) → unitSystem preset → imperial fallback
-  const labels = useMemo(() => {
-    const preset = UNIT_PRESETS[unitSystem] || UNIT_PRESETS.imperial;
-    return { ...preset, ...(unitLabels || {}) };
-  }, [unitSystem, unitLabels]);
-
   const removePiece = (id) => {
     onChange({
       ...cargo,
@@ -71,19 +73,48 @@ const CargoSection = ({
   };
 
   const updatePiece = (id, field, value) => {
+    const numericFields = ['quantity', 'weight', 'weightKg', 'length', 'width', 'height', 'lengthCm', 'widthCm', 'heightCm'];
+    const processedValue = numericFields.includes(field) ? parseFloat(value) || 0 : value;
+
     onChange({
       ...cargo,
-      pieces: cargo.pieces.map((p) => (p.id === id ? { ...p, [field]: value } : p)),
+      pieces: cargo.pieces.map((p) => {
+        if (p.id !== id) return p;
+        
+        let updates = { [field]: processedValue };
+
+        // Handle weight conversions
+        if (field === 'weight' && processedValue > 0) {
+          updates.weightKg = convertWeight(processedValue, 'lbs', 'kg');
+        } else if (field === 'weightKg' && processedValue > 0) {
+          updates.weight = convertWeight(processedValue, 'kg', 'lbs');
+        }
+
+        // Handle dimension conversions
+        if (['length', 'width', 'height'].includes(field) && processedValue > 0) {
+          const cmField = field + 'Cm';
+          updates[cmField] = convertDimension(processedValue, 'inches', 'cm');
+        } else if (['lengthCm', 'widthCm', 'heightCm'].includes(field) && processedValue > 0) {
+          const inField = field.replace('Cm', '');
+          updates[inField] = convertDimension(processedValue, 'cm', 'inches');
+        }
+
+        return { ...p, ...updates };
+      }),
     });
   };
 
-  // Handle stackable for all pieces
   const handleStackableChange = (value) => {
     onChange({
       ...cargo,
       pieces: cargo.pieces.map((p) => ({ ...p, stackable: value })),
     });
   };
+
+  // Calculate totals
+  const totalPieces = cargo.pieces.reduce((sum, p) => sum + (p.quantity || 0), 0);
+  const totalWeightLbs = cargo.pieces.reduce((sum, p) => sum + ((p.weight || 0) * (p.quantity || 0)), 0);
+  const totalWeightKg = cargo.pieces.reduce((sum, p) => sum + ((p.weightKg || 0) * (p.quantity || 0)), 0);
 
   return (
     <div className={`p-4 rounded-lg mb-6 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
@@ -143,11 +174,13 @@ const CargoSection = ({
 
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <div>
-              <label className={`block text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Quantity</label>
+              <label className={`block text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Quantity
+              </label>
               <input
                 type="number"
-                value={piece.quantity}
-                onChange={(e) => updatePiece(piece.id, 'quantity', parseInt(e.target.value, 10) || 0)}
+                value={piece.quantity || ''}
+                onChange={(e) => updatePiece(piece.id, 'quantity', e.target.value)}
                 className={`w-full px-2 py-1 rounded border ${
                   isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
                 }`}
@@ -156,12 +189,31 @@ const CargoSection = ({
 
             <div>
               <label className={`block text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                {labels.weight}
+                Weight ({weightUnit})
               </label>
               <input
                 type="number"
-                value={piece.weight}
-                onChange={(e) => updatePiece(piece.id, 'weight', parseFloat(e.target.value) || 0)}
+                value={isImperial ? (piece.weight || '') : (piece.weightKg || '')}
+                onChange={(e) => updatePiece(piece.id, isImperial ? 'weight' : 'weightKg', e.target.value)}
+                className={`w-full px-2 py-1 rounded border ${
+                  isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
+                }`}
+              />
+              {(isImperial ? piece.weightKg : piece.weight) > 0 && (
+                <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  ≈ {(isImperial ? piece.weightKg : piece.weight).toFixed(1)} {isImperial ? 'kg' : 'lbs'}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className={`block text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Length ({dimensionUnit})
+              </label>
+              <input
+                type="number"
+                value={isImperial ? (piece.length || '') : (piece.lengthCm || '')}
+                onChange={(e) => updatePiece(piece.id, isImperial ? 'length' : 'lengthCm', e.target.value)}
                 className={`w-full px-2 py-1 rounded border ${
                   isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
                 }`}
@@ -170,12 +222,12 @@ const CargoSection = ({
 
             <div>
               <label className={`block text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                {labels.length}
+                Width ({dimensionUnit})
               </label>
               <input
                 type="number"
-                value={piece.length}
-                onChange={(e) => updatePiece(piece.id, 'length', parseFloat(e.target.value) || 0)}
+                value={isImperial ? (piece.width || '') : (piece.widthCm || '')}
+                onChange={(e) => updatePiece(piece.id, isImperial ? 'width' : 'widthCm', e.target.value)}
                 className={`w-full px-2 py-1 rounded border ${
                   isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
                 }`}
@@ -184,12 +236,12 @@ const CargoSection = ({
 
             <div>
               <label className={`block text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                {labels.width}
+                Height ({dimensionUnit})
               </label>
               <input
                 type="number"
-                value={piece.width}
-                onChange={(e) => updatePiece(piece.id, 'width', parseFloat(e.target.value) || 0)}
+                value={isImperial ? (piece.height || '') : (piece.heightCm || '')}
+                onChange={(e) => updatePiece(piece.id, isImperial ? 'height' : 'heightCm', e.target.value)}
                 className={`w-full px-2 py-1 rounded border ${
                   isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
                 }`}
@@ -198,21 +250,8 @@ const CargoSection = ({
 
             <div>
               <label className={`block text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                {labels.height}
+                Cargo Type
               </label>
-              <input
-                type="number"
-                value={piece.height}
-                onChange={(e) => updatePiece(piece.id, 'height', parseFloat(e.target.value) || 0)}
-                className={`w-full px-2 py-1 rounded border ${
-                  isDarkMode ? 'bg-gray-700 border-gray-600 text-white' : 'bg-white border-gray-300'
-                }`}
-              />
-            </div>
-
-            {/* Cargo Type */}
-            <div>
-              <label className={`block text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Cargo Type</label>
               <select
                 value={piece.cargoType || 'General'}
                 onChange={(e) => updatePiece(piece.id, 'cargoType', e.target.value)}
@@ -228,9 +267,10 @@ const CargoSection = ({
               </select>
             </div>
 
-            {/* Commodity */}
             <div className="md:col-span-3">
-              <label className={`block text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Commodity</label>
+              <label className={`block text-xs mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                Commodity
+              </label>
               <select
                 value={piece.commodity}
                 onChange={(e) => updatePiece(piece.id, 'commodity', e.target.value)}
@@ -247,38 +287,44 @@ const CargoSection = ({
               </select>
             </div>
           </div>
+
+          {/* Dimension conversions display */}
+          {['length', 'width', 'height'].some((dim) => 
+            (isImperial ? piece[dim] : piece[dim + 'Cm']) > 0
+          ) && (
+            <div className={`mt-2 text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              Dimensions in {isImperial ? 'cm' : 'inches'}:{' '}
+              {isImperial
+                ? `${(piece.lengthCm || 0).toFixed(1)} × ${(piece.widthCm || 0).toFixed(1)} × ${(piece.heightCm || 0).toFixed(1)} cm`
+                : `${(piece.length || 0).toFixed(1)} × ${(piece.width || 0).toFixed(1)} × ${(piece.height || 0).toFixed(1)} in`}
+            </div>
+          )}
         </div>
       ))}
+
+      {/* Totals */}
+      <div className={`mt-4 pt-3 border-t ${isDarkMode ? 'border-gray-600' : 'border-gray-300'}`}>
+        <div className="text-right space-y-1">
+          <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+            Total Pieces: <strong>{totalPieces}</strong>
+          </p>
+          <p className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+            Total Weight:{' '}
+            <strong>
+              {isImperial
+                ? `${totalWeightLbs.toFixed(2)} lbs`
+                : `${totalWeightKg.toFixed(2)} kg`}
+            </strong>{' '}
+            <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              ({isImperial
+                ? `≈ ${totalWeightKg.toFixed(2)} kg`
+                : `≈ ${totalWeightLbs.toFixed(2)} lbs`})
+            </span>
+          </p>
+        </div>
+      </div>
     </div>
   );
-};
-
-CargoSection.propTypes = {
-  cargo: PropTypes.shape({
-    pieces: PropTypes.arrayOf(
-      PropTypes.shape({
-        id: PropTypes.number.isRequired,
-        quantity: PropTypes.number,
-        weight: PropTypes.number,
-        length: PropTypes.number,
-        width: PropTypes.number,
-        height: PropTypes.number,
-        commodity: PropTypes.string,
-        cargoType: PropTypes.string,
-        stackable: PropTypes.bool,
-      })
-    ).isRequired,
-  }).isRequired,
-  onChange: PropTypes.func.isRequired,
-  isDarkMode: PropTypes.bool,
-  error: PropTypes.string,
-  unitLabels: PropTypes.shape({
-    weight: PropTypes.string,
-    length: PropTypes.string,
-    width: PropTypes.string,
-    height: PropTypes.string,
-  }),
-  unitSystem: PropTypes.oneOf(['imperial', 'metric']),
 };
 
 export default CargoSection;
