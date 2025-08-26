@@ -4,7 +4,7 @@ const webpack = require('webpack');
 const path = require('path');
 
 module.exports = {
-  mode: 'development',
+  mode: process.env.NODE_ENV || 'development',
   entry: './src/index.js',
   output: {
     publicPath: 'auto',
@@ -41,8 +41,8 @@ module.exports = {
   },
   plugins: [
     new webpack.DefinePlugin({
-      'process.env': JSON.stringify({}),
-      'window.API_URL': JSON.stringify('http://localhost:3001/api')
+      'process.env.REACT_APP_API_URL': JSON.stringify(process.env.REACT_APP_API_URL || 'http://localhost:3001/api'),
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
     }),
     new ModuleFederationPlugin({
       name: 'quotes',
