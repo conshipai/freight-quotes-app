@@ -1,14 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertCircle, Package, DollarSign, Plane } from 'lucide-react';
+import { AlertCircle, Package, DollarSign, Plane, CheckCircle, Loader } from 'lucide-react';
 import CargoSection from '../shared/CargoSection';
 import UnitSelector from '../shared/UnitSelector';
+import { airportAPI, quoteAPI } from '../../services/api';
 
 const ExportAir = ({ shellContext }) => {
   const navigate = useNavigate();
   const isDarkMode = shellContext?.isDarkMode;
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [validationStatus, setValidationStatus] = useState({
+    originAirport: null, // null, 'validating', 'valid', 'invalid'
+    destinationAirport: null,
+    pickupZip: null
+  });
+  const [airportInfo, setAirportInfo] = useState({
+    origin: null,
+    destination: null
+  });
   
   const [formData, setFormData] = useState({
     // Origin (Door pickup)
@@ -24,7 +34,7 @@ const ExportAir = ({ shellContext }) => {
     // Carrier selection based on incoterm
     carriers: ['freightforce', 'pelicargo'], // Will be updated based on selection
     
-    // Units system - ADDED
+    // Units system
     units: 'imperial', // 'imperial' or 'metric'
     
     // Cargo
@@ -38,7 +48,7 @@ const ExportAir = ({ shellContext }) => {
         height: 0,
         commodity: '',
         stackable: true,
-        cargoType: 'General' // Added default cargo type
+        cargoType: 'General'
       }]
     },
     
@@ -49,7 +59,126 @@ const ExportAir = ({ shellContext }) => {
     }
   });
 
-  // Handle Unit System Change - ADDED
+  // Debounce timer for ZIP code lookup
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (formData.pickupZip && formData.pickupZip.length === 5 && formData.incoterm === 'EXW') {
+        lookupZipCode(formData.pickupZip);
+      }
+    }, 500); // Wait 500ms after user stops typing
+
+    return () => clearTimeout(timer);
+  }, [formData.pickupZip, formData.incoterm]);
+
+  // Validate airport codes when they change
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (formData.originAirport && formData.originAirport.length === 3 && formData.incoterm === 'CPT') {
+        validateAirportCode('origin', formData.originAirport);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [formData.originAirport, formData.incoterm]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (formData.destinationAirport && formData.destinationAirport.length === 3) {
+        validateAirportCode('destination', formData.destinationAirport);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [formData.destinationAirport]);
+
+  // Lookup ZIP code to get nearest airport
+  const lookupZipCode = async (zipCode) => {
+    setValidationStatus(prev => ({ ...prev, pickupZip: 'validating' }));
+    
+    try {
+      const response = await airportAPI.getNearestAirport(zipCode);
+      
+      if (response.success && response.data) {
+        setValidationStatus(prev => ({ ...prev, pickupZip: 'valid' }));
+        setAirportInfo(prev => ({
+          ...prev,
+          origin: {
+            code: response.data.airportCode,
+            city: response.data.city,
+            state: response.data.state,
+            deliveryZone: response.data.deliveryZone
+          }
+        }));
+        
+        // Clear any ZIP error
+        setErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors.pickupZip;
+          return newErrors;
+        });
+      } else {
+        setValidationStatus(prev => ({ ...prev, pickupZip: 'invalid' }));
+        setErrors(prev => ({
+          ...prev,
+          pickupZip: `No airport found for ZIP ${zipCode}`
+        }));
+      }
+    } catch (error) {
+      setValidationStatus(prev => ({ ...prev, pickupZip: 'invalid' }));
+      setErrors(prev => ({
+        ...prev,
+        pickupZip: 'Unable to find airport for this ZIP code'
+      }));
+    }
+  };
+
+  // Validate airport codes
+  const validateAirportCode = async (type, code) => {
+    const statusKey = type === 'origin' ? 'originAirport' : 'destinationAirport';
+    setValidationStatus(prev => ({ ...prev, [statusKey]: 'validating' }));
+    
+    try {
+      const response = await airportAPI.getAirportsByCodes(code);
+      
+      if (response.success && response.data && response.data[code]) {
+        const airport = response.data[code];
+        
+        if (!airport.error) {
+          setValidationStatus(prev => ({ ...prev, [statusKey]: 'valid' }));
+          setAirportInfo(prev => ({
+            ...prev,
+            [type]: {
+              code: airport.code,
+              name: airport.name,
+              city: airport.city,
+              fullName: airport.fullName
+            }
+          }));
+          
+          // Clear any airport error
+          setErrors(prev => {
+            const newErrors = { ...prev };
+            delete newErrors[statusKey];
+            return newErrors;
+          });
+        } else {
+          setValidationStatus(prev => ({ ...prev, [statusKey]: 'invalid' }));
+          setErrors(prev => ({
+            ...prev,
+            [statusKey]: `Airport code ${code} not found`
+          }));
+        }
+      }
+    } catch (error) {
+      setValidationStatus(prev => ({ ...prev, [statusKey]: 'invalid' }));
+      setErrors(prev => ({
+        ...prev,
+        [statusKey]: 'Unable to validate airport code'
+      }));
+    }
+  };
+
+  // Handle Unit System Change
   const handleUnitChange = (unitSystem) => {
     setFormData(prev => ({
       ...prev,
@@ -71,6 +200,17 @@ const ExportAir = ({ shellContext }) => {
       ...prev,
       incoterm: value,
       carriers: carriers
+    }));
+    
+    // Clear certain validations when switching
+    setValidationStatus(prev => ({
+      ...prev,
+      originAirport: null,
+      pickupZip: null
+    }));
+    setAirportInfo(prev => ({
+      ...prev,
+      origin: null
     }));
   };
 
@@ -98,58 +238,137 @@ const ExportAir = ({ shellContext }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Submit quote (simulated for demo)
+  // Submit quote to backend
   const handleSubmit = async () => {
     if (!validateForm()) return;
     
     setLoading(true);
     
-    // Simulate API call with timeout
-    setTimeout(() => {
-      // Generate a mock quote ID
-      const mockQuoteId = 'QUOTE-' + Date.now();
-      
-      // Log the form data (for demo purposes)
-      console.log('Quote submitted:', {
-        ...formData,
-        userRole: 'foreign_partner',
-        quoteType: 'export-air',
-        quoteId: mockQuoteId
-      });
-      
-      // Show success message
-      alert(`Quote ${mockQuoteId} created successfully!`);
-      
-      // Reset form
-      setFormData({
-        pickupZip: '',
-        originAirport: '',
-        destinationAirport: '',
-        incoterm: 'EXW',
-        carriers: ['freightforce', 'pelicargo'],
-        units: 'imperial',
-        cargo: {
-          pieces: [{
-            id: 1,
-            quantity: 1,
-            weight: 0,
-            length: 0,
-            width: 0,
-            height: 0,
-            commodity: '',
-            stackable: true,
-            cargoType: 'General'
-          }]
+    try {
+      // Prepare the quote request data
+      const quoteData = {
+        // Origin information
+        ...(formData.incoterm === 'EXW' 
+          ? { 
+              pickupZipCode: formData.pickupZip,
+              origin: {
+                zipCode: formData.pickupZip,
+                city: airportInfo.origin?.city,
+                state: airportInfo.origin?.state,
+                airport: airportInfo.origin?.code // This will be resolved by backend
+              }
+            }
+          : { 
+              originAirport: formData.originAirport,
+              origin: {
+                airport: formData.originAirport
+              }
+            }
+        ),
+        
+        // Destination
+        destinationAirport: formData.destinationAirport,
+        destination: {
+          airport: formData.destinationAirport,
+          city: airportInfo.destination?.city
         },
-        insurance: {
-          requested: false,
-          value: 0
-        }
-      });
+        
+        // Cargo details
+        cargo: {
+          pieces: formData.cargo.pieces.map(p => ({
+            quantity: p.quantity,
+            weight: p.weight,
+            length: p.length,
+            width: p.width,
+            height: p.height,
+            commodity: p.commodity,
+            cargoType: p.cargoType,
+            stackable: p.stackable
+          })),
+          weightUnit: formData.units === 'imperial' ? 'lbs' : 'kg',
+          dimensionUnit: formData.units === 'imperial' ? 'in' : 'cm'
+        },
+        
+        // Service options
+        services: ['standard'],
+        carriers: formData.carriers,
+        incoterm: formData.incoterm,
+        
+        // Insurance if requested
+        ...(formData.insurance.requested && {
+          insurance: {
+            declaredValue: formData.insurance.value
+          }
+        }),
+        
+        // Apply markup (default true for partners)
+        applyMarkup: true
+      };
       
+      console.log('Submitting quote:', quoteData);
+      
+      // Call the backend API
+      const response = await quoteAPI.createQuote(quoteData);
+      
+      if (response.success) {
+        // Show success message with quote ID
+        const quoteId = response.data?.quoteNumber || response.data?._id || 'Generated';
+        alert(`Quote ${quoteId} created successfully!`);
+        
+        // Navigate to quote details or list
+        if (response.data?._id) {
+          // You could navigate to a quote details page here
+          // navigate(`/quotes/${response.data._id}`);
+        }
+        
+        // Reset form
+        setFormData({
+          pickupZip: '',
+          originAirport: '',
+          destinationAirport: '',
+          incoterm: 'EXW',
+          carriers: ['freightforce', 'pelicargo'],
+          units: 'imperial',
+          cargo: {
+            pieces: [{
+              id: 1,
+              quantity: 1,
+              weight: 0,
+              length: 0,
+              width: 0,
+              height: 0,
+              commodity: '',
+              stackable: true,
+              cargoType: 'General'
+            }]
+          },
+          insurance: {
+            requested: false,
+            value: 0
+          }
+        });
+        
+        setAirportInfo({ origin: null, destination: null });
+        setValidationStatus({ originAirport: null, destinationAirport: null, pickupZip: null });
+        setErrors({});
+        
+      } else {
+        alert(`Failed to create quote: ${response.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Quote submission error:', error);
+      alert(`Error creating quote: ${error.response?.data?.message || error.message}`);
+    } finally {
       setLoading(false);
-      setErrors({});
-    }, 1500);
+    }
+  };
+
+  // Render validation icon
+  const renderValidationIcon = (status) => {
+    if (status === 'validating') return <Loader className="w-4 h-4 animate-spin text-blue-500" />;
+    if (status === 'valid') return <CheckCircle className="w-4 h-4 text-green-500" />;
+    if (status === 'invalid') return <AlertCircle className="w-4 h-4 text-red-500" />;
+    return null;
   };
 
   return (
@@ -268,23 +487,35 @@ const ExportAir = ({ shellContext }) => {
               }`}>
                 Pickup ZIP Code <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
-                value={formData.pickupZip}
-                onChange={(e) => setFormData({...formData, pickupZip: e.target.value})}
-                placeholder="Enter 5-digit ZIP"
-                maxLength="5"
-                className={`w-full px-3 py-2 rounded-md border ${
-                  errors.pickupZip
-                    ? 'border-red-300'
-                    : isDarkMode
-                      ? 'border-gray-600 bg-gray-800 text-white'
-                      : 'border-gray-300 bg-white'
-                }`}
-              />
-              <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                We'll automatically determine the nearest airport
-              </p>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={formData.pickupZip}
+                  onChange={(e) => setFormData({...formData, pickupZip: e.target.value})}
+                  placeholder="Enter 5-digit ZIP"
+                  maxLength="5"
+                  className={`w-full px-3 py-2 pr-10 rounded-md border ${
+                    errors.pickupZip
+                      ? 'border-red-300'
+                      : isDarkMode
+                        ? 'border-gray-600 bg-gray-800 text-white'
+                        : 'border-gray-300 bg-white'
+                  }`}
+                />
+                <div className="absolute right-2 top-2.5">
+                  {renderValidationIcon(validationStatus.pickupZip)}
+                </div>
+              </div>
+              {airportInfo.origin && (
+                <p className={`text-sm mt-2 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                  ✓ Nearest airport: {airportInfo.origin.code} - {airportInfo.origin.city}, {airportInfo.origin.state}
+                </p>
+              )}
+              {!airportInfo.origin && validationStatus.pickupZip !== 'invalid' && (
+                <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                  We'll automatically determine the nearest airport
+                </p>
+              )}
             </div>
           ) : (
             <div>
@@ -293,20 +524,30 @@ const ExportAir = ({ shellContext }) => {
               }`}>
                 Origin Airport Code <span className="text-red-500">*</span>
               </label>
-              <input
-                type="text"
-                value={formData.originAirport}
-                onChange={(e) => setFormData({...formData, originAirport: e.target.value.toUpperCase()})}
-                placeholder="e.g., JFK, LAX"
-                maxLength="3"
-                className={`w-full px-3 py-2 rounded-md border uppercase ${
-                  errors.originAirport
-                    ? 'border-red-300'
-                    : isDarkMode
-                      ? 'border-gray-600 bg-gray-800 text-white'
-                      : 'border-gray-300 bg-white'
-                }`}
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  value={formData.originAirport}
+                  onChange={(e) => setFormData({...formData, originAirport: e.target.value.toUpperCase()})}
+                  placeholder="e.g., JFK, LAX"
+                  maxLength="3"
+                  className={`w-full px-3 py-2 pr-10 rounded-md border uppercase ${
+                    errors.originAirport
+                      ? 'border-red-300'
+                      : isDarkMode
+                        ? 'border-gray-600 bg-gray-800 text-white'
+                        : 'border-gray-300 bg-white'
+                  }`}
+                />
+                <div className="absolute right-2 top-2.5">
+                  {renderValidationIcon(validationStatus.originAirport)}
+                </div>
+              </div>
+              {airportInfo.origin && (
+                <p className={`text-sm mt-2 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                  ✓ {airportInfo.origin.fullName}
+                </p>
+              )}
             </div>
           )}
         </div>
@@ -323,37 +564,47 @@ const ExportAir = ({ shellContext }) => {
             }`}>
               Destination Airport Code <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              value={formData.destinationAirport}
-              onChange={(e) => setFormData({...formData, destinationAirport: e.target.value.toUpperCase()})}
-              placeholder="e.g., LHR, CDG, NRT"
-              maxLength="3"
-              className={`w-full px-3 py-2 rounded-md border uppercase ${
-                errors.destination
-                  ? 'border-red-300'
-                  : isDarkMode
-                    ? 'border-gray-600 bg-gray-800 text-white'
-                    : 'border-gray-300 bg-white'
-              }`}
-            />
+            <div className="relative">
+              <input
+                type="text"
+                value={formData.destinationAirport}
+                onChange={(e) => setFormData({...formData, destinationAirport: e.target.value.toUpperCase()})}
+                placeholder="e.g., LHR, CDG, NRT"
+                maxLength="3"
+                className={`w-full px-3 py-2 pr-10 rounded-md border uppercase ${
+                  errors.destination
+                    ? 'border-red-300'
+                    : isDarkMode
+                      ? 'border-gray-600 bg-gray-800 text-white'
+                      : 'border-gray-300 bg-white'
+                }`}
+              />
+              <div className="absolute right-2 top-2.5">
+                {renderValidationIcon(validationStatus.destinationAirport)}
+              </div>
+            </div>
+            {airportInfo.destination && (
+              <p className={`text-sm mt-2 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+                ✓ {airportInfo.destination.fullName}
+              </p>
+            )}
           </div>
         </div>
 
-        {/* Unit Selector - PROPERLY CONNECTED */}
+        {/* Unit Selector */}
         <UnitSelector 
           value={formData.units}
           onChange={handleUnitChange}
           isDarkMode={isDarkMode}
         />
 
-        {/* Cargo Section - PROPERLY CONNECTED WITH UNIT SYSTEM */}
+        {/* Cargo Section */}
         <CargoSection 
           cargo={formData.cargo}
           onChange={(cargo) => setFormData({...formData, cargo})}
           isDarkMode={isDarkMode}
           error={errors.cargo}
-          unitSystem={formData.units} // Pass the unit system
+          unitSystem={formData.units}
         />
 
         {/* Insurance Option */}
@@ -414,7 +665,7 @@ const ExportAir = ({ shellContext }) => {
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className={`px-6 py-2 rounded-lg text-white font-medium ${
+            className={`px-6 py-2 rounded-lg text-white font-medium flex items-center gap-2 ${
               loading
                 ? 'bg-gray-400 cursor-not-allowed'
                 : isDarkMode
@@ -422,6 +673,7 @@ const ExportAir = ({ shellContext }) => {
                   : 'bg-conship-purple hover:bg-purple-800'
             }`}
           >
+            {loading && <Loader className="w-4 h-4 animate-spin" />}
             {loading ? 'Generating...' : 'Generate Quote'}
           </button>
         </div>
