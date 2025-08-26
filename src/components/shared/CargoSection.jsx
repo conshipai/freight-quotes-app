@@ -1,3 +1,4 @@
+// src/components/shared/CargoSection.jsx - Updated without cargo type per piece
 import React from 'react';
 import { Package, Plus, Trash2 } from 'lucide-react';
 
@@ -280,31 +281,7 @@ const CargoSection = ({ cargo, onChange, isDarkMode, error, units = 'imperial' }
                 />
               </div>
 
-              {/* Cargo Type */}
-              <div>
-                <label className={`block text-sm mb-1 ${
-                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                }`}>
-                  Cargo Type
-                </label>
-                <select
-                  value={piece.cargoType || 'General'}
-                  onChange={(e) => updatePiece(piece.id, 'cargoType', e.target.value)}
-                  className={`w-full px-3 py-2 rounded-md border ${
-                    isDarkMode
-                      ? 'border-gray-600 bg-gray-900 text-white'
-                      : 'border-gray-300 bg-white'
-                  }`}
-                >
-                  <option value="General">General</option>
-                  <option value="Dangerous Goods">Dangerous Goods</option>
-                  <option value="Perishable">Perishable</option>
-                  <option value="Valuable">Valuable</option>
-                  <option value="Live Animals">Live Animals</option>
-                </select>
-              </div>
-
-              {/* Commodity */}
+              {/* Commodity - Now takes full width since we removed cargo type */}
               <div className="md:col-span-3">
                 <label className={`block text-sm mb-1 ${
                   isDarkMode ? 'text-gray-300' : 'text-gray-700'
