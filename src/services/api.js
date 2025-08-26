@@ -24,26 +24,64 @@ API.interceptors.request.use(
   }
 );
 
-// API methods
+// Airport API methods
 export const airportAPI = {
   // Get nearest airport from ZIP code
   getNearestAirport: async (zipCode) => {
-    const response = await API.post('/airports/nearest-airport', { zipCode });
-    return response.data;
+    try {
+      const response = await API.post('/airports/nearest-airport', { zipCode });
+      return response.data;
+    } catch (error) {
+      console.error('Error getting nearest airport:', error);
+      throw error;
+    }
   },
   
   // Validate airport codes
   getAirportsByCodes: async (codes) => {
-    const response = await API.get(`/airports/by-codes?codes=${codes}`);
-    return response.data;
+    try {
+      const response = await API.get(`/airports/by-codes?codes=${codes}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error validating airport codes:', error);
+      throw error;
+    }
   }
 };
 
+// Quote API methods
 export const quoteAPI = {
-  // Create quote
+  // Create air quote
   createQuote: async (quoteData) => {
-    const response = await API.post('/quotes/air', quoteData);
-    return response.data;
+    try {
+      const response = await API.post('/quotes/air', quoteData);
+      return response.data;
+    } catch (error) {
+      console.error('Error creating quote:', error);
+      throw error;
+    }
+  },
+  
+  // Get quote by ID
+  getQuote: async (quoteId) => {
+    try {
+      const response = await API.get(`/quotes/${quoteId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching quote:', error);
+      throw error;
+    }
+  },
+  
+  // Get quote history
+  getQuoteHistory: async (params = {}) => {
+    try {
+      const response = await API.get('/quotes/history', { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching quote history:', error);
+      throw error;
+    }
   }
 };
 
