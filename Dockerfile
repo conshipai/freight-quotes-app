@@ -1,9 +1,23 @@
 FROM node:18-alpine AS builder
+
 WORKDIR /app
+
+# Copy package files
 COPY package*.json ./
-# Use npm install instead of npm ci
 RUN npm install
+
+# Copy all project files
 COPY . .
+
+# Accept build arguments from Coolify
+ARG REACT_APP_API_URL
+ARG NODE_ENV=production
+
+# Export them as environment variables for the webpack build
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
+ENV NODE_ENV=$NODE_ENV
+
+# Build the app - webpack will inject the env vars
 RUN npm run build
 
 FROM nginx:alpine
