@@ -47,7 +47,7 @@ const ExportAir = ({ shellContext }) => {
     }
   });
 
- const searchAirports = async (query, type) => {
+const searchAirports = async (query, type) => {
   const q = (query || '').trim();
   if (q.length < 2) {
     setAirportSuggestions(prev => ({ ...prev, [type]: [] }));
@@ -59,10 +59,13 @@ const ExportAir = ({ shellContext }) => {
   try {
     console.log('Searching airports:', { query: q, type }); // Debug log
 
+    // FIX: Map frontend types to backend types
+    const backendType = type === 'origin' ? 'domestic' : 'international';
+
     const response = await axios.get(`${API_URL}/airports/search`, {
       params: {
         q,
-        type: type === 'origin' ? 'domestic' : 'international'
+        type: backendType  // Send the correct type to backend!
       }
     });
 
