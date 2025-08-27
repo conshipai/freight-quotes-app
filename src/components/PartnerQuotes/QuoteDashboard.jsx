@@ -46,7 +46,25 @@ const QuoteDashboard = ({ shellContext }) => {
       monthlyVolume: 48
     });
   }, []);
-
+<button
+  onClick={() => {
+    console.log('TEST: Navigating directly to success page');
+    navigate('/quotes/success', {
+      state: {
+        requestNumber: 'TEST-REQ-001',
+        quoteNumber: 'TEST-Q-001',
+        origin: 'LAX',
+        destination: 'JFK',
+        pieces: 5,
+        weight: '100 lbs',
+        cargoType: 'general'
+      }
+    });
+  }}
+  className="px-4 py-2 bg-green-500 text-white rounded"
+>
+  TEST: Go to Success Page
+</button>
   const quoteTypes = [
     {
       id: 'air',
