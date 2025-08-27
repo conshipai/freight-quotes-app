@@ -29,6 +29,19 @@ const convertDimensions = (cargo, units) => {
   }));
 };
 
+// Helper function for calculating totals
+const getTotals = (pieces, units) => {
+  const totalPieces = pieces.reduce((sum, p) => sum + (Number(p.quantity) || 0), 0);
+  const totalWeightRaw = pieces.reduce(
+    (sum, p) => sum + (Number(p.weight) || 0) * (Number(p.quantity) || 0),
+    0
+  );
+  // Round nicely
+  const totalWeight = Math.round((totalWeightRaw + Number.EPSILON) * 100) / 100;
+  const displayWeight = `${totalWeight} ${units === 'metric' ? 'kg' : 'lbs'}`;
+  return { totalPieces, totalWeight, displayWeight };
+};
+
 const ExportAir = ({ shellContext }) => {
   const navigate = useNavigate();
   const isDarkMode = shellContext?.isDarkMode;
@@ -182,6 +195,7 @@ const ExportAir = ({ shellContext }) => {
     return true;
   };
 
+  // Keep submitQuote for potential future use with real API
   const submitQuote = async (quoteData) => {
     try {
       setLoading(true);
@@ -260,11 +274,38 @@ const ExportAir = ({ shellContext }) => {
       return;
     }
 
-    // General cargo - submit directly
-    await submitQuote({
-      ...formData,
-      cargo: convertedCargo
-    });
+    // General cargo - use mock response for Phase 1
+    // Mock response for now
+    const mockResponse = {
+      success: true,
+      data: {
+        requestNumber: `REQ-2024-${Math.floor(Math.random() * 10000)}`,
+        quoteNumber: `Q-2024-${Math.floor(Math.random() * 10000)}`,
+      }
+    };
+
+    if (mockResponse.success) {
+      const { totalPieces, displayWeight } = getTotals(formData.cargo.pieces, formData.units);
+      
+      navigate('/quotes/success', {
+        state: {
+          requestNumber: mockResponse.data.requestNumber,
+          quoteNumber: mockResponse.data.quoteNumber,
+          origin: formData.originAirport,
+          destination: formData.destinationAirport,
+          pieces: totalPieces,
+          weight: displayWeight,
+          hasBatteries: formData.cargoType === 'batteries',
+          hasDG: formData.cargoType === 'dangerous_goods'
+        }
+      });
+    }
+
+    // For future real API implementation:
+    // await submitQuote({
+    //   ...formData,
+    //   cargo: convertedCargo
+    // });
   };
 
   return (
