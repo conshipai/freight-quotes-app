@@ -1,4 +1,7 @@
 // src/components/PartnerQuotes/QuoteSuccess.jsx
+const QuoteSuccess = ({ shellContext }) => {
+  console.log('QuoteSuccess rendering with state:', location.state);
+  const navigate = useNavigate();
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
