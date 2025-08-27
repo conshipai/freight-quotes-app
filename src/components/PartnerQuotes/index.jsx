@@ -1,6 +1,6 @@
 // src/components/PartnerQuotes/index.jsx
-import React from 'react';
-import { Routes, Route, NavLink, Navigate, useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Routes, Route, NavLink, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Plane, Ship, Briefcase, Plus } from 'lucide-react';
 
 import ExportAir from './ExportAir';
@@ -18,78 +18,100 @@ import PendingQuotes from './PendingQuotes';
 
 const PartnerQuotes = ({ shellContext }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const isDarkMode = shellContext?.isDarkMode;
 
-  console.log('RENDERING: PartnerQuotes component');
+  // Better debugging - only logs on mount and route changes
+  useEffect(() => {
+    console.log('PartnerQuotes mounted');
+  }, []);
+
+  useEffect(() => {
+    console.log('Route changed to:', location.pathname);
+  }, [location.pathname]);
 
   return (
     <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
-      {/* Navigation Tabs */}
-      <div className={`border-b ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-        <div className="max-w-7xl mx-auto px-4">
-          <nav className="flex space-x-8" aria-label="Tabs">
-            {/* Keep existing nav links */}
-            <NavLink
-              to="export-air"
-              className={({ isActive }) =>
-                `inline-flex items-center gap-2 px-4 py-3 border-b-2 text-sm font-medium ${
-                  isActive
-                    ? isDarkMode
-                      ? 'border-blue-400 text-blue-300'
-                      : 'border-blue-600 text-blue-700'
-                    : isDarkMode
-                    ? 'border-transparent text-gray-300 hover:text-white'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`
-              }
-            >
-              <Plane className="w-4 h-4" />
-              Air Export
-            </NavLink>
+      {/* Navigation Tabs - Only show on certain routes */}
+      {!location.pathname.includes('/success') && 
+       !location.pathname.includes('/battery-details') && 
+       !location.pathname.includes('/dangerous-goods') && (
+        <div className={`border-b ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+          <div className="max-w-7xl mx-auto px-4">
+            <nav className="flex space-x-8" aria-label="Tabs">
+              <NavLink
+                to="export-air"
+                className={({ isActive }) =>
+                  `inline-flex items-center gap-2 px-4 py-3 border-b-2 text-sm font-medium ${
+                    isActive
+                      ? isDarkMode
+                        ? 'border-blue-400 text-blue-300'
+                        : 'border-blue-600 text-blue-700'
+                      : isDarkMode
+                      ? 'border-transparent text-gray-300 hover:text-white'
+                      : 'border-transparent text-gray-600 hover:text-gray-900'
+                  }`
+                }
+              >
+                <Plane className="w-4 h-4" />
+                Air Export
+              </NavLink>
 
-            <NavLink
-              to="export-ocean"
-              className={({ isActive }) =>
-                `inline-flex items-center gap-2 px-4 py-3 border-b-2 text-sm font-medium ${
-                  isActive
-                    ? isDarkMode
-                      ? 'border-blue-400 text-blue-300'
-                      : 'border-blue-600 text-blue-700'
-                    : isDarkMode
-                    ? 'border-transparent text-gray-300 hover:text-white'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`
-              }
-            >
-              <Ship className="w-4 h-4" />
-              Ocean Export
-            </NavLink>
+              <NavLink
+                to="export-ocean"
+                className={({ isActive }) =>
+                  `inline-flex items-center gap-2 px-4 py-3 border-b-2 text-sm font-medium ${
+                    isActive
+                      ? isDarkMode
+                        ? 'border-blue-400 text-blue-300'
+                        : 'border-blue-600 text-blue-700'
+                      : isDarkMode
+                      ? 'border-transparent text-gray-300 hover:text-white'
+                      : 'border-transparent text-gray-600 hover:text-gray-900'
+                  }`
+                }
+              >
+                <Ship className="w-4 h-4" />
+                Ocean Export
+              </NavLink>
 
-            <NavLink
-              to="projects"
-              className={({ isActive }) =>
-                `inline-flex items-center gap-2 px-4 py-3 border-b-2 text-sm font-medium ${
-                  isActive
-                    ? isDarkMode
-                      ? 'border-blue-400 text-blue-300'
-                      : 'border-blue-600 text-blue-700'
-                    : isDarkMode
-                    ? 'border-transparent text-gray-300 hover:text-white'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`
-              }
-            >
-              <Briefcase className="w-4 h-4" />
-              Projects
-            </NavLink>
+              <NavLink
+                to="projects"
+                className={({ isActive }) =>
+                  `inline-flex items-center gap-2 px-4 py-3 border-b-2 text-sm font-medium ${
+                    isActive
+                      ? isDarkMode
+                        ? 'border-blue-400 text-blue-300'
+                        : 'border-blue-600 text-blue-700'
+                      : isDarkMode
+                      ? 'border-transparent text-gray-300 hover:text-white'
+                      : 'border-transparent text-gray-600 hover:text-gray-900'
+                  }`
+                }
+              >
+                <Briefcase className="w-4 h-4" />
+                Projects
+              </NavLink>
 
-            {/* You can add optional tabs for Dashboard/History/Pending if desired */}
-          </nav>
-
-          {/* New Quote button (kept placeholder comment in your snippet) */}
-          {/* ... New Quote button ... */}
+              {/* Quick links to dashboard/history */}
+              <div className="ml-auto flex items-center space-x-4">
+                <button
+                  onClick={() => navigate('dashboard')}
+                  className={`text-sm ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}
+                >
+                  Dashboard
+                </button>
+                <button
+                  onClick={() => navigate('history')}
+                  className={`text-sm ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'}`}
+                >
+                  History
+                </button>
+              </div>
+            </nav>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 py-6">
