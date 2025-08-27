@@ -213,7 +213,7 @@ const ExportAir = ({ shellContext }) => {
         aircraftType: formData.aircraftType
       }));
       
-      navigate('../battery-details', {
+      navigate('/quotes/battery-details', {
         state: {
           quoteData: { ...formData, cargo: convertedCargo },
           aircraftType: formData.aircraftType
@@ -229,7 +229,7 @@ const ExportAir = ({ shellContext }) => {
         aircraftType: formData.aircraftType
       }));
       
-      navigate('../dangerous-goods', {
+      navigate('/quotes/dangerous-goods', {
         state: {
           quoteData: { ...formData, cargo: convertedCargo },
           aircraftType: formData.aircraftType
