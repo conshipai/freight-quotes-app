@@ -1,7 +1,4 @@
 // src/components/PartnerQuotes/QuoteSuccess.jsx
-const QuoteSuccess = ({ shellContext }) => {
-  console.log('QuoteSuccess rendering with state:', location.state);
-  const navigate = useNavigate();
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
@@ -13,6 +10,8 @@ import {
 const QuoteSuccess = ({ shellContext }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  console.log('QuoteSuccess rendering with state:', location.state);
+  
   const isDarkMode = shellContext?.isDarkMode;
   
   const [countdown, setCountdown] = useState(10);
