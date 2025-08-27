@@ -16,6 +16,7 @@ import QuoteDashboard from './QuoteDashboard';
 import QuoteHistory from './QuoteHistory';
 import QuoteDetails from './QuoteDetails';
 import PendingQuotes from './PendingQuotes';
+import BookingSuccess from './BookingSuccess';
 
 const PartnerQuotes = ({ shellContext }) => {
   const location = useLocation();
@@ -206,6 +207,7 @@ const PartnerQuotes = ({ shellContext }) => {
             <Route path="pending/:requestId?" element={<PendingQuotes shellContext={shellContext} />} />
             <Route path="history" element={<QuoteHistory shellContext={shellContext} />} />
             <Route path="details/:quoteId" element={<QuoteDetails shellContext={shellContext} />} />
+            <Route path="booking-success" element={<BookingSuccess shellContext={shellContext} />} />
 
             {/* Fallback */}
             <Route path="*" element={<Navigate to="dashboard" replace />} />
