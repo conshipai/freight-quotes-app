@@ -273,19 +273,22 @@ const QuoteDetails = ({ shellContext }) => {
     });
   };
 
-const handleBookNow = () => {
-  if (selectedCarrier && quote) {
-    navigate('/quotes/booking-success', {
-      state: {
-        quote: quote,
-        selectedCarrier: selectedCarrier,
-        rateType: rateType,
-        pickupDate: '2025-01-20',  // You can make these dynamic later
-        deliveryDate: '2025-01-25'  // You can make these dynamic later
-      }
-    });
-  }
-};
+      const handleBookNow = () => {
+        if (selectedCarrier && quote) {
+          console.log('Booking with:', selectedCarrier);
+          // Navigate to booking success instead of booking form
+          navigate('/quotes/booking-success', {
+            state: {
+              quote: quote,
+              selectedCarrier: selectedCarrier,
+              rateType: rateType,
+              pickupDate: new Date().toISOString(),
+              deliveryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+              specialInstructions: ''
+            }
+          });
+        }
+      };
 
   if (loading) {
     return (
