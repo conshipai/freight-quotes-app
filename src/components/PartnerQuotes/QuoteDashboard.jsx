@@ -22,7 +22,7 @@ const QuoteDashboard = ({ shellContext }) => {
     // Simulate loading recent quotes
     setRecentQuotes([
       {
-        id: 'Q-2024-10001',
+        id: '10001',  // Changed to just the number part
         origin: 'LAX',
         destination: 'LHR',
         status: 'pending',
@@ -30,7 +30,7 @@ const QuoteDashboard = ({ shellContext }) => {
         carrierCount: 3
       },
       {
-        id: 'Q-2024-10002',
+        id: '10002',  // Changed to just the number part
         origin: 'JFK',
         destination: 'NRT',
         status: 'ready',
@@ -55,7 +55,7 @@ const QuoteDashboard = ({ shellContext }) => {
       icon: Plane,
       color: isDarkMode ? 'bg-blue-900/20 border-blue-700' : 'bg-blue-50 border-blue-200',
       iconColor: 'text-blue-600',
-      route: '/quotes/export-air'
+      route: 'export-air'  // Changed to relative path
     },
     {
       id: 'ocean',
@@ -64,7 +64,7 @@ const QuoteDashboard = ({ shellContext }) => {
       icon: Ship,
       color: isDarkMode ? 'bg-cyan-900/20 border-cyan-700' : 'bg-cyan-50 border-cyan-200',
       iconColor: 'text-cyan-600',
-      route: '/quotes/export-ocean'
+      route: 'export-ocean'  // Changed to relative path
     },
     {
       id: 'project',
@@ -73,13 +73,28 @@ const QuoteDashboard = ({ shellContext }) => {
       icon: Briefcase,
       color: isDarkMode ? 'bg-purple-900/20 border-purple-700' : 'bg-purple-50 border-purple-200',
       iconColor: 'text-purple-600',
-      route: '/quotes/projects'
+      route: 'projects'  // Changed to relative path
     }
   ];
 
+  const handleQuoteTypeClick = (route) => {
+    console.log('Navigating to:', route);
+    navigate(`../${route}`, { relative: 'path' });
+  };
+
+  const handleViewAllClick = () => {
+    console.log('Navigating to history');
+    navigate('../history', { relative: 'path' });
+  };
+
+  const handleQuoteClick = (quoteId) => {
+    console.log('Navigating to quote details:', quoteId);
+    navigate(`../details/${quoteId}`, { relative: 'path' });
+  };
+
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
-      <div className="max-w-7xl mx-auto px-4 py-8">
+    <div className={`${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <div className="px-4 py-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
@@ -160,7 +175,7 @@ const QuoteDashboard = ({ shellContext }) => {
               return (
                 <button
                   key={type.id}
-                  onClick={() => navigate(type.route)}
+                  onClick={() => handleQuoteTypeClick(type.route)}
                   className={`p-6 rounded-lg border-2 transition-all hover:scale-105 ${type.color}`}
                 >
                   <Icon className={`h-12 w-12 mb-4 ${type.iconColor}`} />
@@ -184,7 +199,7 @@ const QuoteDashboard = ({ shellContext }) => {
                 Recent Quotes
               </h2>
               <button
-                onClick={() => navigate('/quotes/history')}
+                onClick={handleViewAllClick}
                 className="text-sm text-blue-600 hover:text-blue-800"
               >
                 View All
@@ -196,7 +211,7 @@ const QuoteDashboard = ({ shellContext }) => {
             {recentQuotes.map((quote) => (
               <div
                 key={quote.id}
-                onClick={() => navigate(`/quotes/details/${quote.id}`)}
+                onClick={() => handleQuoteClick(quote.id)}
                 className={`px-6 py-4 cursor-pointer ${
                   isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'
                 }`}
@@ -204,7 +219,7 @@ const QuoteDashboard = ({ shellContext }) => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                      {quote.id}
+                      Q-2024-{quote.id}
                     </p>
                     <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                       {quote.origin} → {quote.destination}
