@@ -20,6 +20,7 @@ import BookingSuccess from './BookingSuccess';
 
 const PartnerQuotes = ({ shellContext }) => {
   const location = useLocation();
+  console.log('PartnerQuotes rendering, current path:', location.pathname);
   const isDarkMode = shellContext?.isDarkMode;
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -203,7 +204,12 @@ const PartnerQuotes = ({ shellContext }) => {
             <Route path="dangerous-goods" element={<DangerousGoodsForm shellContext={shellContext} />} />
 
             {/* Quote Flow Pages */}
-            <Route path="success" element={<QuoteSuccess shellContext={shellContext} />} />
+            <Route path="success" element={
+              (() => {
+                console.log('Success route matched!');
+                return <QuoteSuccess shellContext={shellContext} />;
+              })()
+            } />
             <Route path="pending/:requestId?" element={<PendingQuotes shellContext={shellContext} />} />
             <Route path="history" element={<QuoteHistory shellContext={shellContext} />} />
             <Route path="details/:quoteId" element={<QuoteDetails shellContext={shellContext} />} />
