@@ -273,17 +273,19 @@ const QuoteDetails = ({ shellContext }) => {
     });
   };
 
-  const handleBookNow = () => {
-    if (selectedCarrier && quote) {
-      navigate(`/booking/${quote.id}`, {
-        state: {
-          quote: quote,
-          selectedCarrier: selectedCarrier,
-          rateType: rateType
-        }
-      });
-    }
-  };
+const handleBookNow = () => {
+  if (selectedCarrier && quote) {
+    navigate('/quotes/booking-success', {
+      state: {
+        quote: quote,
+        selectedCarrier: selectedCarrier,
+        rateType: rateType,
+        pickupDate: '2025-01-20',  // You can make these dynamic later
+        deliveryDate: '2025-01-25'  // You can make these dynamic later
+      }
+    });
+  }
+};
 
   if (loading) {
     return (
