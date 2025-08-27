@@ -105,80 +105,80 @@ const BatteryDetailsForm = ({ shellContext }) => {
     if (!validateForm()) return;
 
     setLoading(true);
+    
     try {
-      // STEP 1: Get IDs from SERVER
-      const initRes = await axios.post(`${API_URL}/quotes/init`, { 
-        quoteType: 'export-air' 
-      });
-      
-      if (!initRes.data?.success) {
-        throw new Error('Failed to initialize quote');
-      }
-
-      const { requestId, quoteId, costId } = initRes.data;
-
-      // STEP 2: Upload SDS if DG mode
-      let sdsFileUrl = null;
-      if (batteryData.mode === 'dg' && batteryData.sdsFile?.file) {
-        const formData = new FormData();
-        formData.append('file', batteryData.sdsFile.file);
-        formData.append('requestId', requestId);  // Server-issued ID
-        formData.append('documentType', 'battery-sds');
-
-        const uploadResponse = await axios.post(`${API_URL}/storage/upload`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        
-        sdsFileUrl = uploadResponse.data.fileUrl;
-      }
-
-      // STEP 3: Submit the complete quote
-      const completeQuoteData = {
-        ...mainQuoteData,
-        batteryDetails: {
-          ...batteryData,
-          sdsFileUrl,
-          sdsFileName: batteryData.sdsFile?.name || ''
-        },
-        ids: { requestId, quoteId, costId }
+      // Mock response for Phase 1
+      const mockResponse = {
+        success: true,
+        data: {
+          requestNumber: `REQ-2024-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+          quoteNumber: `Q-2024-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+        }
       };
 
-      const response = await axios.post(`${API_URL}/quotes/create`, {
-        ...completeQuoteData,
-        quoteType: 'export-air',
-        userRole: 'foreign_partner',
-        hasBatteries: true
-      });
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
 
-      if (response.data.success) {
+      if (mockResponse.success) {
+        // Calculate totals for display
+        const totalPieces = mainQuoteData.cargo?.pieces?.reduce(
+          (sum, p) => sum + (Number(p.quantity) || 0), 0
+        ) || 0;
+        const totalWeightRaw = mainQuoteData.cargo?.pieces?.reduce(
+          (sum, p) => sum + (Number(p.weight) || 0) * (Number(p.quantity) || 0), 0
+        ) || 0;
+        const totalWeight = Math.round((totalWeightRaw + Number.EPSILON) * 100) / 100;
+        const displayWeight = `${totalWeight} ${mainQuoteData.units === 'metric' ? 'kg' : 'lbs'}`;
+
         // Clear temporary storage
         localStorage.removeItem('tempQuoteData');
         localStorage.removeItem('tempBatteryData');
 
-        // Navigate to success page with quote details
+        // Navigate to success page with comprehensive data
         navigate('/quotes/success', {
           state: {
-            requestId,
-            quoteId,
-            costId,
+            requestNumber: mockResponse.data.requestNumber,
+            quoteNumber: mockResponse.data.quoteNumber,
             origin: mainQuoteData.originAirport,
             destination: mainQuoteData.destinationAirport,
-            quoteType: 'export-air',
+            pieces: totalPieces,
+            weight: displayWeight,
+            incoterm: mainQuoteData.incoterm,
+            pickupZip: mainQuoteData.pickupZip,
+            aircraftType: mainQuoteData.aircraftType,
+            cargoType: 'batteries',
+            batteryMode: batteryData.mode,
+            batteryType: batteryData.mode === 'nonrestricted' 
+              ? batteryData.nonRestrictedCode 
+              : `${batteryData.dgDetails.unNumber} - ${batteryData.dgDetails.properName}`,
+            insurance: mainQuoteData.insurance,
             hasBatteries: true,
-            batteryMode: batteryData.mode
+            hasDG: false
           }
         });
-      } else {
-        throw new Error(response.data?.message || 'Quote creation failed');
       }
     } catch (error) {
       console.error('Submit error:', error);
       setErrors({ 
-        submit: error.response?.data?.message || error.message || 'Failed to submit quote' 
+        submit: 'Failed to submit quote. Please try again.' 
       });
     } finally {
       setLoading(false);
     }
+
+    // For future real API implementation:
+    // try {
+    //   const initRes = await axios.post(`${API_URL}/quotes/init`, { 
+    //     quoteType: 'export-air' 
+    //   });
+    //   
+    //   const { requestId, quoteId, costId } = initRes.data;
+    //
+    //   // Upload SDS if needed...
+    //   // Submit complete quote...
+    // } catch (error) {
+    //   setErrors({ submit: error.message });
+    // }
   };
 
   const handleBack = () => {
