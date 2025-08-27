@@ -130,78 +130,6 @@ const DangerousGoodsForm = ({ shellContext }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Keep the original submitQuote function for future API integration
-  const submitQuoteToAPI = async () => {
-    try {
-      // STEP 1: Get IDs from SERVER (not client-side)
-      const initRes = await axios.post(`${API_URL}/quotes/init`, { 
-        quoteType: 'export-air' 
-      });
-      
-      if (!initRes.data?.success) {
-        throw new Error('Failed to initialize quote');
-      }
-
-      const { requestId, quoteId, costId } = initRes.data;
-
-      // STEP 2: Upload SDS to R2 with server-issued requestId
-      let sdsFileUrl = null;
-      if (dgData.sdsFile?.file) {
-        const formData = new FormData();
-        formData.append('file', dgData.sdsFile.file);
-        formData.append('requestId', requestId);  // Server-issued ID
-        formData.append('documentType', 'dg-sds');
-
-        const uploadResponse = await axios.post(`${API_URL}/storage/upload`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        
-        sdsFileUrl = uploadResponse.data.fileUrl;
-      }
-
-      // STEP 3: Submit the complete quote
-      const completeQuoteData = {
-        ...mainQuoteData,
-        dangerousGoods: {
-          ...dgData,
-          sdsFileUrl,
-          sdsFileName: dgData.sdsFile?.name || ''
-        },
-        ids: { requestId, quoteId, costId }
-      };
-
-      const response = await axios.post(`${API_URL}/quotes/create`, {
-        ...completeQuoteData,
-        quoteType: 'export-air',
-        userRole: 'foreign_partner',
-        hasDangerousGoods: true
-      });
-
-      if (response.data.success) {
-        localStorage.removeItem('tempQuoteData');
-        localStorage.removeItem('tempDGData');
-
-        navigate('/quotes/pending', {
-          state: {
-            requestId,
-            quoteId,
-            origin: mainQuoteData.originAirport,
-            destination: mainQuoteData.destinationAirport
-          }
-        });
-      } else {
-        throw new Error(response.data?.message || 'Quote creation failed');
-      }
-    } catch (error) {
-      console.error('Submit error:', error);
-      setErrors({ 
-        submit: error.response?.data?.message || error.message || 'Failed to submit quote' 
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
@@ -212,8 +140,8 @@ const DangerousGoodsForm = ({ shellContext }) => {
       const mockResponse = {
         success: true,
         data: {
-          requestNumber: `REQ-2024-${Math.floor(Math.random() * 10000)}`,
-          quoteNumber: `Q-2024-${Math.floor(Math.random() * 10000)}`,
+          requestNumber: `REQ-2024-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+          quoteNumber: `Q-2024-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
         }
       };
 
@@ -231,7 +159,7 @@ const DangerousGoodsForm = ({ shellContext }) => {
         localStorage.removeItem('tempQuoteData');
         localStorage.removeItem('tempDGData');
 
-        // Navigate to success page
+        // Navigate to success page with comprehensive data
         navigate('/quotes/success', {
           state: {
             requestNumber: mockResponse.data.requestNumber,
@@ -240,8 +168,19 @@ const DangerousGoodsForm = ({ shellContext }) => {
             destination: mainQuoteData.destinationAirport,
             pieces: totalPieces,
             weight: displayWeight,
+            incoterm: mainQuoteData.incoterm,
+            pickupZip: mainQuoteData.pickupZip,
+            aircraftType: mainQuoteData.aircraftType,
+            cargoType: 'dangerous_goods',
+            dgInfo: {
+              unNumber: dgData.unNumber,
+              properName: dgData.properName,
+              classDivision: dgData.classDivision,
+              packingGroup: dgData.packingGroup
+            },
+            insurance: mainQuoteData.insurance,
             hasBatteries: false,
-            hasDG: true  // This is the dangerous goods form, so always true
+            hasDG: true
           }
         });
       }
@@ -255,7 +194,18 @@ const DangerousGoodsForm = ({ shellContext }) => {
     }
 
     // For future real API implementation:
-    // await submitQuoteToAPI();
+    // try {
+    //   const initRes = await axios.post(`${API_URL}/quotes/init`, { 
+    //     quoteType: 'export-air' 
+    //   });
+    //   
+    //   const { requestId, quoteId, costId } = initRes.data;
+    //
+    //   // Upload SDS...
+    //   // Submit complete quote...
+    // } catch (error) {
+    //   setErrors({ submit: error.message });
+    // }
   };
 
   const handleBack = () => {
