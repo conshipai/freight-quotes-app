@@ -102,6 +102,7 @@ const BatteryDetailsForm = ({ shellContext }) => {
   };
 
   const handleSubmit = async () => {
+    console.log('=== BATTERY FORM SUBMIT ===');
     if (!validateForm()) return;
 
     setLoading(true);
@@ -130,32 +131,38 @@ const BatteryDetailsForm = ({ shellContext }) => {
         const totalWeight = Math.round((totalWeightRaw + Number.EPSILON) * 100) / 100;
         const displayWeight = `${totalWeight} ${mainQuoteData.units === 'metric' ? 'kg' : 'lbs'}`;
 
+        const navigationState = {
+          requestNumber: mockResponse.data.requestNumber,
+          quoteNumber: mockResponse.data.quoteNumber,
+          origin: mainQuoteData.originAirport,
+          destination: mainQuoteData.destinationAirport,
+          pieces: totalPieces,
+          weight: displayWeight,
+          incoterm: mainQuoteData.incoterm,
+          pickupZip: mainQuoteData.pickupZip,
+          aircraftType: mainQuoteData.aircraftType,
+          cargoType: 'batteries',
+          batteryMode: batteryData.mode,
+          batteryType: batteryData.mode === 'nonrestricted' 
+            ? batteryData.nonRestrictedCode 
+            : `${batteryData.dgDetails.unNumber} - ${batteryData.dgDetails.properName}`,
+          insurance: mainQuoteData.insurance,
+          hasBatteries: true,
+          hasDG: false
+        };
+        
+        console.log('Battery form navigating to success with:', navigationState);
+
         // Clear temporary storage
         localStorage.removeItem('tempQuoteData');
         localStorage.removeItem('tempBatteryData');
 
-        // Navigate to success page with comprehensive data
+        // Navigate to success page
         navigate('/quotes/success', {
-          state: {
-            requestNumber: mockResponse.data.requestNumber,
-            quoteNumber: mockResponse.data.quoteNumber,
-            origin: mainQuoteData.originAirport,
-            destination: mainQuoteData.destinationAirport,
-            pieces: totalPieces,
-            weight: displayWeight,
-            incoterm: mainQuoteData.incoterm,
-            pickupZip: mainQuoteData.pickupZip,
-            aircraftType: mainQuoteData.aircraftType,
-            cargoType: 'batteries',
-            batteryMode: batteryData.mode,
-            batteryType: batteryData.mode === 'nonrestricted' 
-              ? batteryData.nonRestrictedCode 
-              : `${batteryData.dgDetails.unNumber} - ${batteryData.dgDetails.properName}`,
-            insurance: mainQuoteData.insurance,
-            hasBatteries: true,
-            hasDG: false
-          }
+          state: navigationState
         });
+        
+        console.log('Navigation called to /quotes/success');
       }
     } catch (error) {
       console.error('Submit error:', error);
