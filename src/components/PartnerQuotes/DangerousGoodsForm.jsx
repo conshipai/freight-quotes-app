@@ -131,6 +131,7 @@ const DangerousGoodsForm = ({ shellContext }) => {
   };
 
   const handleSubmit = async () => {
+    console.log('=== DG FORM SUBMIT ===');
     if (!validateForm()) return;
 
     setLoading(true);
@@ -155,34 +156,40 @@ const DangerousGoodsForm = ({ shellContext }) => {
           mainQuoteData.units || 'imperial'
         );
 
+        const navigationState = {
+          requestNumber: mockResponse.data.requestNumber,
+          quoteNumber: mockResponse.data.quoteNumber,
+          origin: mainQuoteData.originAirport,
+          destination: mainQuoteData.destinationAirport,
+          pieces: totalPieces,
+          weight: displayWeight,
+          incoterm: mainQuoteData.incoterm,
+          pickupZip: mainQuoteData.pickupZip,
+          aircraftType: mainQuoteData.aircraftType,
+          cargoType: 'dangerous_goods',
+          dgInfo: {
+            unNumber: dgData.unNumber,
+            properName: dgData.properName,
+            classDivision: dgData.classDivision,
+            packingGroup: dgData.packingGroup
+          },
+          insurance: mainQuoteData.insurance,
+          hasBatteries: false,
+          hasDG: true
+        };
+        
+        console.log('DG form navigating to success with:', navigationState);
+
         // Clean up localStorage
         localStorage.removeItem('tempQuoteData');
         localStorage.removeItem('tempDGData');
 
-        // Navigate to success page with comprehensive data
+        // Navigate to success page
         navigate('/quotes/success', {
-          state: {
-            requestNumber: mockResponse.data.requestNumber,
-            quoteNumber: mockResponse.data.quoteNumber,
-            origin: mainQuoteData.originAirport,
-            destination: mainQuoteData.destinationAirport,
-            pieces: totalPieces,
-            weight: displayWeight,
-            incoterm: mainQuoteData.incoterm,
-            pickupZip: mainQuoteData.pickupZip,
-            aircraftType: mainQuoteData.aircraftType,
-            cargoType: 'dangerous_goods',
-            dgInfo: {
-              unNumber: dgData.unNumber,
-              properName: dgData.properName,
-              classDivision: dgData.classDivision,
-              packingGroup: dgData.packingGroup
-            },
-            insurance: mainQuoteData.insurance,
-            hasBatteries: false,
-            hasDG: true
-          }
+          state: navigationState
         });
+        
+        console.log('Navigation called to /quotes/success');
       }
     } catch (error) {
       console.error('Submit error:', error);
