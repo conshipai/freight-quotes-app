@@ -254,30 +254,30 @@ const ExportAir = ({ shellContext }) => {
       await new Promise(resolve => setTimeout(resolve, 500));
 
       if (mockResponse.success) {
-        const { totalPieces, displayWeight } = getTotals(formData.cargo.pieces, formData.units);
+  const { totalPieces, displayWeight } = getTotals(formData.cargo.pieces, formData.units);
         
         // Clean up localStorage
         localStorage.removeItem('tempQuoteData');
         
         // Navigate to success page with comprehensive data
-        navigate('/quotes/success', {
-          state: {
-            requestNumber: mockResponse.data.requestNumber,
-            quoteNumber: mockResponse.data.quoteNumber,
-            origin: formData.originAirport,
-            destination: formData.destinationAirport,
-            pieces: totalPieces,
-            weight: displayWeight,
-            incoterm: formData.incoterm,
-            pickupZip: formData.pickupZip,
-            aircraftType: formData.aircraftType,
-            cargoType: formData.cargoType,
-            insurance: formData.insurance,
-            hasBatteries: false,
-            hasDG: false
-          }
-        });
-      }
+        navigate('/quotes/success', {  // Make sure this path is correct
+            state: {
+              requestNumber: mockResponse.data.requestNumber,
+              quoteNumber: mockResponse.data.quoteNumber,
+              origin: formData.originAirport,
+              destination: formData.destinationAirport,
+              pieces: totalPieces,
+              weight: displayWeight,
+              incoterm: formData.incoterm,
+              pickupZip: formData.pickupZip,
+              aircraftType: formData.aircraftType,
+              cargoType: formData.cargoType,
+              insurance: formData.insurance,
+              hasBatteries: false,
+              hasDG: false
+            }
+          });
+        }
     } catch (error) {
       console.error('Submit error:', error);
       setErrors({ 
