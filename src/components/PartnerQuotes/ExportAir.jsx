@@ -195,42 +195,6 @@ const ExportAir = ({ shellContext }) => {
     return true;
   };
 
-  // Keep submitQuote for potential future use with real API
-  const submitQuote = async (quoteData) => {
-    try {
-      setLoading(true);
-      setErrors({});
-
-      const response = await axios.post(`${API_URL}/quotes/create`, {
-        quoteType: 'export-air',
-        userRole: 'foreign_partner',
-        ...quoteData
-      });
-
-      if (response.data.success) {
-        const requestNumber = response.data.data.requestNumber;
-        
-        // Navigate to pending page
-        navigate('pending', {
-          state: {
-            requestNumber,
-            origin: quoteData.originAirport,
-            destination: quoteData.destinationAirport
-          }
-        });
-      } else {
-        throw new Error(response.data.error || 'Failed to create quote');
-      }
-    } catch (err) {
-      console.error('Quote submission error:', err);
-      setErrors({
-        submit: err.response?.data?.error || err.message || 'Failed to create quote.'
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSubmit = async () => {
     const isValid = await validateForm();
     if (!isValid) return;
@@ -274,38 +238,72 @@ const ExportAir = ({ shellContext }) => {
       return;
     }
 
-    // General cargo - use mock response for Phase 1
-    // Mock response for now
-    const mockResponse = {
-      success: true,
-      data: {
-        requestNumber: `REQ-2024-${Math.floor(Math.random() * 10000)}`,
-        quoteNumber: `Q-2024-${Math.floor(Math.random() * 10000)}`,
-      }
-    };
-
-    if (mockResponse.success) {
-      const { totalPieces, displayWeight } = getTotals(formData.cargo.pieces, formData.units);
-      
-      navigate('/quotes/success', {
-        state: {
-          requestNumber: mockResponse.data.requestNumber,
-          quoteNumber: mockResponse.data.quoteNumber,
-          origin: formData.originAirport,
-          destination: formData.destinationAirport,
-          pieces: totalPieces,
-          weight: displayWeight,
-          hasBatteries: formData.cargoType === 'batteries',
-          hasDG: formData.cargoType === 'dangerous_goods'
+    setLoading(true);
+    
+    try {
+      // Mock response for Phase 1 - General cargo
+      const mockResponse = {
+        success: true,
+        data: {
+          requestNumber: `REQ-2024-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+          quoteNumber: `Q-2024-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
         }
+      };
+
+      // Simulate API delay
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      if (mockResponse.success) {
+        const { totalPieces, displayWeight } = getTotals(formData.cargo.pieces, formData.units);
+        
+        // Clean up localStorage
+        localStorage.removeItem('tempQuoteData');
+        
+        // Navigate to success page with comprehensive data
+        navigate('/quotes/success', {
+          state: {
+            requestNumber: mockResponse.data.requestNumber,
+            quoteNumber: mockResponse.data.quoteNumber,
+            origin: formData.originAirport,
+            destination: formData.destinationAirport,
+            pieces: totalPieces,
+            weight: displayWeight,
+            incoterm: formData.incoterm,
+            pickupZip: formData.pickupZip,
+            aircraftType: formData.aircraftType,
+            cargoType: formData.cargoType,
+            insurance: formData.insurance,
+            hasBatteries: false,
+            hasDG: false
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Submit error:', error);
+      setErrors({ 
+        submit: 'Failed to submit quote. Please try again.' 
       });
+    } finally {
+      setLoading(false);
     }
 
     // For future real API implementation:
-    // await submitQuote({
-    //   ...formData,
-    //   cargo: convertedCargo
-    // });
+    // try {
+    //   const response = await axios.post(`${API_URL}/quotes/create`, {
+    //     quoteType: 'export-air',
+    //     userRole: 'foreign_partner',
+    //     ...formData,
+    //     cargo: convertedCargo
+    //   });
+    //
+    //   if (response.data.success) {
+    //     navigate('/quotes/success', { state: response.data });
+    //   }
+    // } catch (err) {
+    //   setErrors({ submit: err.message });
+    // } finally {
+    //   setLoading(false);
+    // }
   };
 
   return (
