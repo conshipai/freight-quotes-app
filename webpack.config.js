@@ -52,7 +52,7 @@ module.exports = {
       name: 'quotes',
       filename: 'remoteEntry.js',
       exposes: {
-        './App': './src/bootstrap.js',
+        './App': './src/App',
         './Widget': './src/Widget',
          },
       shared: {
