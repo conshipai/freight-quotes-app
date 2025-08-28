@@ -3,10 +3,11 @@ import { BrowserRouter } from 'react-router-dom';
 import QuoteRouter from './router/QuoteRouter';
 import './styles/index.css';
 
-function App({ shellContext }) {
-  // Initialize with the role from shellContext immediately
-  const [userRole, setUserRole] = useState(shellContext?.user?.role || 'foreign_partner');
-  const [isDarkMode, setIsDarkMode] = useState(shellContext?.isDarkMode || false);
+function App({ shellContext, basename = "/app/quotes" }) {
+  // Use React from window if available (for module federation)
+  const ReactToUse = window.React || React;
+  const [userRole, setUserRole] = ReactToUse.useState(shellContext?.user?.role || 'foreign_partner');
+  const [isDarkMode, setIsDarkMode] = ReactToUse.useState(shellContext?.isDarkMode || false);
 
   useEffect(() => {
     if (shellContext) {
@@ -25,9 +26,16 @@ function App({ shellContext }) {
     }
   }, [isDarkMode]);
 
-  // Use root basename when running standalone
-  const isStandalone = !window.shellContext;
-  const basename = isStandalone ? "/" : "/app/quotes";
+  // Don't use BrowserRouter when loaded as module
+  const isModule = !!shellContext;
+  
+  if (isModule) {
+    return (
+      <div className={isDarkMode ? 'dark' : ''}>
+        <QuoteRouter userRole={userRole} shellContext={shellContext} />
+      </div>
+    );
+  }
 
   return (
     <BrowserRouter basename={basename}>
