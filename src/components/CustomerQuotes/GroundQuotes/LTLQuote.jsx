@@ -186,14 +186,15 @@ const LTLQuote = ({ shellContext, customerCarriers, customerId }) => {
     }
   };
 
-  const handleBook = (carrier, rate) => {
+    const handleBook = (carrier, rate) => {
+    console.log('Booking:', { carrier, rate, formData }); // Add this for debugging
     navigate('/quotes/booking', {
       state: {
+        requestId,
         carrier,
         rate,
         shipmentDetails: formData,
-        quoteType: 'ground-ltl',
-        requestId
+        quoteType: 'ground-ltl'
       }
     });
   };
