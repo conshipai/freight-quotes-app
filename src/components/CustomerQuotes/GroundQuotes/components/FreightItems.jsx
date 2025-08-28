@@ -147,332 +147,275 @@ const FreightItems = ({ formData, updateFormData, errors, isDarkMode }) => {
               isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-gray-50'
             }`}
           >
-              <div className="flex items-center justify-between mb-3">
-                <h4 className={`font-medium flex items-center gap-2 ${
-                  isDarkMode ? 'text-white' : 'text-gray-900'
-                }`}>
-                  <Package className="w-4 h-4" />
-                  Item {index + 1}
-                  {item.hazmat && (
-                    <span className="text-xs px-2 py-1 bg-red-600 text-white rounded">
-                      HAZMAT
-                    </span>
-                  )}
-                </h4>
-                {formData.items.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeItem(item.id)}
-                    className={`p-1 rounded hover:bg-gray-200 ${
-                      isDarkMode ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600'
-                    }`}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+            <div className="flex items-center justify-between mb-3">
+              <h4 className={`font-medium flex items-center gap-2 ${
+                isDarkMode ? 'text-white' : 'text-gray-900'
+              }`}>
+                <Package className="w-4 h-4" />
+                Item {index + 1}
+                {item.hazmat && (
+                  <span className="text-xs px-2 py-1 bg-red-600 text-white rounded">
+                    HAZMAT
+                  </span>
                 )}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {/* Class */}
-                <div>
-                  <label className={`block text-sm font-medium mb-1 ${
-                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                  }`}>
-                    Freight Class
-                  </label>
-                  <select
-                    value={item.class}
-                    onChange={(e) => updateItem(item.id, 'class', e.target.value)}
-                    className={`w-full px-3 py-2 rounded-md border ${
-                      isDarkMode
-                        ? 'border-gray-600 bg-gray-700 text-white'
-                        : 'border-gray-300 bg-white'
-                    } focus:ring-2 focus:ring-blue-500`}
-                  >
-                    {freightClasses.map(fc => (
-                      <option key={fc.value} value={fc.value}>{fc.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Weight */}
-                <div>
-                  <label className={`block text-sm font-medium mb-1 ${
-                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                  }`}>
-                    Weight (lbs)
-                  </label>
-                  <input
-                    type="number"
-                    value={item.weight}
-                    onChange={(e) => updateItem(item.id, 'weight', e.target.value)}
-                    placeholder="0"
-                    className={`w-full px-3 py-2 rounded-md border ${
-                      isDarkMode
-                        ? 'border-gray-600 bg-gray-700 text-white'
-                        : 'border-gray-300 bg-white'
-                    } focus:ring-2 focus:ring-blue-500`}
-                  />
-                </div>
-
-                {/* Quantity */}
-                <div>
-                  <label className={`block text-sm font-medium mb-1 ${
-                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                  }`}>
-                    Quantity
-                  </label>
-                  <input
-                    type="number"
-                    value={item.quantity}
-                    onChange={(e) => updateItem(item.id, 'quantity', e.target.value)}
-                    min="1"
-                    className={`w-full px-3 py-2 rounded-md border ${
-                      isDarkMode
-                        ? 'border-gray-600 bg-gray-700 text-white'
-                        : 'border-gray-300 bg-white'
-                    } focus:ring-2 focus:ring-blue-500`}
-                  />
-                </div>
-
-                {/* Packaging Type */}
-                <div>
-                  <label className={`block text-sm font-medium mb-1 ${
-                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                  }`}>
-                    Packaging
-                  </label>
-                  <select
-                    value={item.packagingType}
-                    onChange={(e) => updateItem(item.id, 'packagingType', e.target.value)}
-                    className={`w-full px-3 py-2 rounded-md border ${
-                      isDarkMode
-                        ? 'border-gray-600 bg-gray-700 text-white'
-                        : 'border-gray-300 bg-white'
-                    } focus:ring-2 focus:ring-blue-500`}
-                  >
-                    {packagingTypes.map(type => (
-                      <option key={type.value} value={type.value}>{type.label}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Dimensions */}
-                <div>
-                  <label className={`block text-sm font-medium mb-1 ${
-                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                  }`}>
-                    Length (in)
-                  </label>
-                  <input
-                    type="number"
-                    value={item.length}
-                    onChange={(e) => updateItem(item.id, 'length', e.target.value)}
-                    placeholder="48"
-                    className={`w-full px-3 py-2 rounded-md border ${
-                      isDarkMode
-                        ? 'border-gray-600 bg-gray-700 text-white'
-                        : 'border-gray-300 bg-white'
-                    } focus:ring-2 focus:ring-blue-500`}
-                  />
-                </div>
-
-                <div>
-                  <label className={`block text-sm font-medium mb-1 ${
-                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                  }`}>
-                    Width (in)
-                  </label>
-                  <input
-                    type="number"
-                    value={item.width}
-                    onChange={(e) => updateItem(item.id, 'width', e.target.value)}
-                    placeholder="40"
-                    className={`w-full px-3 py-2 rounded-md border ${
-                      isDarkMode
-                        ? 'border-gray-600 bg-gray-700 text-white'
-                        : 'border-gray-300 bg-white'
-                    } focus:ring-2 focus:ring-blue-500`}
-                  />
-                </div>
-
-                <div>
-                  <label className={`block text-sm font-medium mb-1 ${
-                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                  }`}>
-                    Height (in)
-                  </label>
-                  <input
-                    type="number"
-                    value={item.height}
-                    onChange={(e) => updateItem(item.id, 'height', e.target.value)}
-                    placeholder="48"
-                    className={`w-full px-3 py-2 rounded-md border ${
-                      isDarkMode
-                        ? 'border-gray-600 bg-gray-700 text-white'
-                        : 'border-gray-300 bg-white'
-                    } focus:ring-2 focus:ring-blue-500`}
-                  />
-                </div>
-
-                {/* Description */}
-                <div className="lg:col-span-2">
-                  <label className={`block text-sm font-medium mb-1 ${
-                    isDarkMode ? 'text-gray-300' : 'text-gray-700'
-                  }`}>
-                    Description
-                  </label>
-                  <input
-                    type="text"
-                    value={item.description}
-                    onChange={(e) => updateItem(item.id, 'description', e.target.value)}
-                    placeholder="General freight, machinery, etc."
-                    className={`w-full px-3 py-2 rounded-md border ${
-                      isDarkMode
-                        ? 'border-gray-600 bg-gray-700 text-white'
-                        : 'border-gray-300 bg-white'
-                    } focus:ring-2 focus:ring-blue-500`}
-                  />
-                </div>
-              </div>
-
-              {/* Density and Class Calculation Display */}
-              {item.length && item.width && item.height && item.weight && (
-                <div className={`text-sm mt-3 p-2 rounded ${
-                  isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
-                }`}>
-                  {(() => {
-                    const { density, estimatedClass, cubicFeet } = calculateDensityAndClass(item);
-                    return (
-                      <div className="flex flex-wrap gap-4">
-                        <div>
-                          <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-                            Density: 
-                          </span>
-                          <span className={`ml-1 font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                            {density} lbs/ft³
-                          </span>
-                        </div>
-                        <div>
-                          <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-                            Volume: 
-                          </span>
-                          <span className={`ml-1 font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                            {cubicFeet} ft³
-                          </span>
-                        </div>
-                        {estimatedClass && (
-                          <div>
-                            <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-                              Suggested Class: 
-                            </span>
-                            <span className={`ml-1 font-medium ${
-                              item.class !== estimatedClass 
-                                ? 'text-orange-500' 
-                                : isDarkMode ? 'text-green-400' : 'text-green-600'
-                            }`}>
-                              {estimatedClass}
-                              {item.class !== estimatedClass && (
-                                <button
-                                  type="button"
-                                  onClick={() => updateItem(item.id, 'class', estimatedClass)}
-                                  className="ml-2 text-xs underline hover:no-underline"
-                                >
-                                  Use this class
-                                </button>
-                              )}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-                </div>
+              </h4>
+              {formData.items.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => removeItem(item.id)}
+                  className={`p-1 rounded hover:bg-gray-200 ${
+                    isDarkMode ? 'text-gray-400 hover:bg-gray-700' : 'text-gray-600'
+                  }`}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               )}
+            </div>
 
-              {/* Item Options */}
-              <div className="mt-3 flex flex-wrap gap-4">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={item.hazmat}
-                    onChange={(e) => updateItem(item.id, 'hazmat', e.target.checked)}
-                    className="mr-2"
-                  />
-                  <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                    Hazardous Material
-                  </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Class */}
+              <div>
+                <label className={`block text-sm font-medium mb-1 ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Freight Class
                 </label>
-                
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={item.stackable}
-                    onChange={(e) => updateItem(item.id, 'stackable', e.target.checked)}
-                    className="mr-2"
-                  />
-                  <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                    Stackable
-                  </span>
-                </label>
-
+                <select
+                  value={item.class}
+                  onChange={(e) => updateItem(item.id, 'class', e.target.value)}
+                  className={`w-full px-3 py-2 rounded-md border ${
+                    isDarkMode
+                      ? 'border-gray-600 bg-gray-700 text-white'
+                      : 'border-gray-300 bg-white'
+                  } focus:ring-2 focus:ring-blue-500`}
+                >
+                  {freightClasses.map(fc => (
+                    <option key={fc.value} value={fc.value}>{fc.label}</option>
+                  ))}
+                </select>
               </div>
 
-              {/* Density and Class Calculation Display */}
-              {item.length && item.width && item.height && item.weight && (
-                <div className={`text-sm mt-3 p-2 rounded ${
-                  isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
+              {/* Weight */}
+              <div>
+                <label className={`block text-sm font-medium mb-1 ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
                 }`}>
-                  {(() => {
-                    const { density, estimatedClass, cubicFeet } = calculateDensityAndClass(item);
-                    return (
-                      <div className="flex flex-wrap gap-4">
-                        <div>
-                          <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-                            Density: 
-                          </span>
-                          <span className={`ml-1 font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                            {density} lbs/ft³
-                          </span>
-                        </div>
-                        <div>
-                          <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-                            Volume: 
-                          </span>
-                          <span className={`ml-1 font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                            {cubicFeet} ft³
-                          </span>
-                        </div>
-                        {estimatedClass && (
-                          <div>
-                            <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
-                              Suggested Class: 
-                            </span>
-                            <span className={`ml-1 font-medium ${
-                              item.class !== estimatedClass 
-                                ? 'text-orange-500' 
-                                : isDarkMode ? 'text-green-400' : 'text-green-600'
-                            }`}>
-                              {estimatedClass}
-                              {item.class !== estimatedClass && (
-                                <button
-                                  type="button"
-                                  onClick={() => updateItem(item.id, 'class', estimatedClass)}
-                                  className="ml-2 text-xs underline hover:no-underline"
-                                >
-                                  Use this class
-                                </button>
-                              )}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
-                </div>
-              )}
+                  Weight (lbs)
+                </label>
+                <input
+                  type="number"
+                  value={item.weight}
+                  onChange={(e) => updateItem(item.id, 'weight', e.target.value)}
+                  placeholder="0"
+                  className={`w-full px-3 py-2 rounded-md border ${
+                    isDarkMode
+                      ? 'border-gray-600 bg-gray-700 text-white'
+                      : 'border-gray-300 bg-white'
+                  } focus:ring-2 focus:ring-blue-500`}
+                />
+              </div>
+
+              {/* Quantity */}
+              <div>
+                <label className={`block text-sm font-medium mb-1 ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Quantity
+                </label>
+                <input
+                  type="number"
+                  value={item.quantity}
+                  onChange={(e) => updateItem(item.id, 'quantity', e.target.value)}
+                  min="1"
+                  className={`w-full px-3 py-2 rounded-md border ${
+                    isDarkMode
+                      ? 'border-gray-600 bg-gray-700 text-white'
+                      : 'border-gray-300 bg-white'
+                  } focus:ring-2 focus:ring-blue-500`}
+                />
+              </div>
+
+              {/* Packaging Type */}
+              <div>
+                <label className={`block text-sm font-medium mb-1 ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Packaging
+                </label>
+                <select
+                  value={item.packagingType}
+                  onChange={(e) => updateItem(item.id, 'packagingType', e.target.value)}
+                  className={`w-full px-3 py-2 rounded-md border ${
+                    isDarkMode
+                      ? 'border-gray-600 bg-gray-700 text-white'
+                      : 'border-gray-300 bg-white'
+                  } focus:ring-2 focus:ring-blue-500`}
+                >
+                  {packagingTypes.map(type => (
+                    <option key={type.value} value={type.value}>{type.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Dimensions */}
+              <div>
+                <label className={`block text-sm font-medium mb-1 ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Length (in)
+                </label>
+                <input
+                  type="number"
+                  value={item.length}
+                  onChange={(e) => updateItem(item.id, 'length', e.target.value)}
+                  placeholder="48"
+                  className={`w-full px-3 py-2 rounded-md border ${
+                    isDarkMode
+                      ? 'border-gray-600 bg-gray-700 text-white'
+                      : 'border-gray-300 bg-white'
+                  } focus:ring-2 focus:ring-blue-500`}
+                />
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-1 ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Width (in)
+                </label>
+                <input
+                  type="number"
+                  value={item.width}
+                  onChange={(e) => updateItem(item.id, 'width', e.target.value)}
+                  placeholder="40"
+                  className={`w-full px-3 py-2 rounded-md border ${
+                    isDarkMode
+                      ? 'border-gray-600 bg-gray-700 text-white'
+                      : 'border-gray-300 bg-white'
+                  } focus:ring-2 focus:ring-blue-500`}
+                />
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-1 ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Height (in)
+                </label>
+                <input
+                  type="number"
+                  value={item.height}
+                  onChange={(e) => updateItem(item.id, 'height', e.target.value)}
+                  placeholder="48"
+                  className={`w-full px-3 py-2 rounded-md border ${
+                    isDarkMode
+                      ? 'border-gray-600 bg-gray-700 text-white'
+                      : 'border-gray-300 bg-white'
+                  } focus:ring-2 focus:ring-blue-500`}
+                />
+              </div>
+
+              {/* Description */}
+              <div className="lg:col-span-2">
+                <label className={`block text-sm font-medium mb-1 ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Description
+                </label>
+                <input
+                  type="text"
+                  value={item.description}
+                  onChange={(e) => updateItem(item.id, 'description', e.target.value)}
+                  placeholder="General freight, machinery, etc."
+                  className={`w-full px-3 py-2 rounded-md border ${
+                    isDarkMode
+                      ? 'border-gray-600 bg-gray-700 text-white'
+                      : 'border-gray-300 bg-white'
+                  } focus:ring-2 focus:ring-blue-500`}
+                />
               </div>
             </div>
+
+            {/* Item Options */}
+            <div className="mt-3 flex flex-wrap gap-4">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={item.hazmat}
+                  onChange={(e) => updateItem(item.id, 'hazmat', e.target.checked)}
+                  className="mr-2"
+                />
+                <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Hazardous Material
+                </span>
+              </label>
+              
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={item.stackable}
+                  onChange={(e) => updateItem(item.id, 'stackable', e.target.checked)}
+                  className="mr-2"
+                />
+                <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Stackable
+                </span>
+              </label>
+            </div>
+
+            {/* Density and Class Calculation Display */}
+            {item.length && item.width && item.height && item.weight && (
+              <div className={`text-sm mt-3 p-2 rounded ${
+                isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
+              }`}>
+                {(() => {
+                  const { density, estimatedClass, cubicFeet } = calculateDensityAndClass(item);
+                  return (
+                    <div className="flex flex-wrap gap-4">
+                      <div>
+                        <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                          Density: 
+                        </span>
+                        <span className={`ml-1 font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                          {density} lbs/ft³
+                        </span>
+                      </div>
+                      <div>
+                        <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                          Volume: 
+                        </span>
+                        <span className={`ml-1 font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                          {cubicFeet} ft³
+                        </span>
+                      </div>
+                      {estimatedClass && (
+                        <div>
+                          <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>
+                            Suggested Class: 
+                          </span>
+                          <span className={`ml-1 font-medium ${
+                            item.class !== estimatedClass 
+                              ? 'text-orange-500' 
+                              : isDarkMode ? 'text-green-400' : 'text-green-600'
+                          }`}>
+                            {estimatedClass}
+                            {item.class !== estimatedClass && (
+                              <button
+                                type="button"
+                                onClick={() => updateItem(item.id, 'class', estimatedClass)}
+                                className="ml-2 text-xs underline hover:no-underline"
+                              >
+                                Use this class
+                              </button>
+                            )}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
           </div>
         ))}
       </div>
