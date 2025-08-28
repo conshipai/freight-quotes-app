@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import CustomerQuotes from '../components/CustomerQuotes';
 import PartnerQuotes from '../components/PartnerQuotes';
-import BookingPage from '../components/Booking/BookingPage';
+import BookingPage from './CustomerQuotes/Booking/BookingPage'';
 import ViewToggle from '../components/ViewToggle';
 
 const QuoteRouter = ({ userRole, shellContext }) => {
