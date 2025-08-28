@@ -42,10 +42,10 @@ const CarrierResults = ({ rates, formData, requestId, onBack, onBook, isDarkMode
     });
   };
 
-  const handleSelectRate = (rate) => {
-    setSelectedRate(rate);
-    onBook(rate.carrier, rate);
-  };
+        const handleSelectRate = (rate) => {
+        setSelectedRate(rate);
+        onBook(rate.carrier, rate);
+      };
 
   return (
     <div>
