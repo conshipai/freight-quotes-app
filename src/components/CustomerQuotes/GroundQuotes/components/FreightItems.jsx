@@ -190,4 +190,231 @@ const FreightItems = ({ formData, updateFormData, errors, isDarkMode }) => {
                   value={item.quantity}
                   onChange={(e) => updateItem(item.id, 'quantity', e.target.value)}
                   min="1"
-                  className={`w-full px-3 py-2 rounde
+                  className={`w-full px-3 py-2 rounded-md border ${
+                    isDarkMode
+                      ? 'border-gray-600 bg-gray-700 text-white'
+                      : 'border-gray-300 bg-white'
+                  } focus:ring-2 focus:ring-blue-500`}
+                />
+              </div>
+
+              {/* Packaging Type */}
+              <div>
+                <label className={`block text-sm font-medium mb-1 ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Packaging
+                </label>
+                <select
+                  value={item.packagingType}
+                  onChange={(e) => updateItem(item.id, 'packagingType', e.target.value)}
+                  className={`w-full px-3 py-2 rounded-md border ${
+                    isDarkMode
+                      ? 'border-gray-600 bg-gray-700 text-white'
+                      : 'border-gray-300 bg-white'
+                  } focus:ring-2 focus:ring-blue-500`}
+                >
+                  {packagingTypes.map(type => (
+                    <option key={type.value} value={type.value}>{type.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Dimensions */}
+              <div>
+                <label className={`block text-sm font-medium mb-1 ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Length (in)
+                </label>
+                <input
+                  type="number"
+                  value={item.length}
+                  onChange={(e) => updateItem(item.id, 'length', e.target.value)}
+                  placeholder="48"
+                  className={`w-full px-3 py-2 rounded-md border ${
+                    isDarkMode
+                      ? 'border-gray-600 bg-gray-700 text-white'
+                      : 'border-gray-300 bg-white'
+                  } focus:ring-2 focus:ring-blue-500`}
+                />
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-1 ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Width (in)
+                </label>
+                <input
+                  type="number"
+                  value={item.width}
+                  onChange={(e) => updateItem(item.id, 'width', e.target.value)}
+                  placeholder="40"
+                  className={`w-full px-3 py-2 rounded-md border ${
+                    isDarkMode
+                      ? 'border-gray-600 bg-gray-700 text-white'
+                      : 'border-gray-300 bg-white'
+                  } focus:ring-2 focus:ring-blue-500`}
+                />
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-1 ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Height (in)
+                </label>
+                <input
+                  type="number"
+                  value={item.height}
+                  onChange={(e) => updateItem(item.id, 'height', e.target.value)}
+                  placeholder="48"
+                  className={`w-full px-3 py-2 rounded-md border ${
+                    isDarkMode
+                      ? 'border-gray-600 bg-gray-700 text-white'
+                      : 'border-gray-300 bg-white'
+                  } focus:ring-2 focus:ring-blue-500`}
+                />
+              </div>
+
+              {/* Description */}
+              <div className="lg:col-span-2">
+                <label className={`block text-sm font-medium mb-1 ${
+                  isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                }`}>
+                  Description
+                </label>
+                <input
+                  type="text"
+                  value={item.description}
+                  onChange={(e) => updateItem(item.id, 'description', e.target.value)}
+                  placeholder="General freight, machinery, etc."
+                  className={`w-full px-3 py-2 rounded-md border ${
+                    isDarkMode
+                      ? 'border-gray-600 bg-gray-700 text-white'
+                      : 'border-gray-300 bg-white'
+                  } focus:ring-2 focus:ring-blue-500`}
+                />
+              </div>
+            </div>
+
+            {/* Item Options */}
+            <div className="mt-3 flex flex-wrap gap-4">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={item.hazmat}
+                  onChange={(e) => updateItem(item.id, 'hazmat', e.target.checked)}
+                  className="mr-2"
+                />
+                <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Hazardous Material
+                </span>
+              </label>
+              
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={item.stackable}
+                  onChange={(e) => updateItem(item.id, 'stackable', e.target.checked)}
+                  className="mr-2"
+                />
+                <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                  Stackable
+                </span>
+              </label>
+
+              {item.length && item.width && item.height && item.weight && (
+                <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Density: {calculateDensity(item)} lbs/ft³
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        onClick={addItem}
+        className={`mt-4 w-full py-2 px-4 rounded-lg border-2 border-dashed flex items-center justify-center gap-2 transition-colors ${
+          isDarkMode
+            ? 'border-gray-600 text-gray-400 hover:border-gray-500 hover:text-gray-300'
+            : 'border-gray-300 text-gray-600 hover:border-gray-400 hover:text-gray-700'
+        }`}
+      >
+        <Plus className="w-5 h-5" />
+        Add Another Item
+      </button>
+
+      {/* Insurance Option */}
+      <div className="mt-6">
+        <label className="flex items-center">
+          <input
+            type="checkbox"
+            checked={formData.insurance.requested}
+            onChange={(e) => updateFormData({
+              insurance: {
+                ...formData.insurance,
+                requested: e.target.checked
+              }
+            })}
+            className="mr-3"
+          />
+          <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            Add Cargo Insurance
+          </span>
+        </label>
+        
+        {formData.insurance.requested && (
+          <div className="mt-3 ml-6">
+            <label className={`block text-sm font-medium mb-1 ${
+              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+            }`}>
+              Declared Value ($)
+            </label>
+            <input
+              type="number"
+              value={formData.insurance.value}
+              onChange={(e) => updateFormData({
+                insurance: {
+                  ...formData.insurance,
+                  value: e.target.value
+                }
+              })}
+              placeholder="0.00"
+              className={`w-64 px-3 py-2 rounded-md border ${
+                isDarkMode
+                  ? 'border-gray-600 bg-gray-700 text-white'
+                  : 'border-gray-300 bg-white'
+              } focus:ring-2 focus:ring-blue-500`}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Special Instructions */}
+      <div className="mt-6">
+        <label className={`block text-sm font-medium mb-2 ${
+          isDarkMode ? 'text-gray-300' : 'text-gray-700'
+        }`}>
+          Special Instructions (Optional)
+        </label>
+        <textarea
+          value={formData.specialInstructions}
+          onChange={(e) => updateFormData({ specialInstructions: e.target.value })}
+          rows={3}
+          placeholder="Any special handling requirements, delivery instructions, etc."
+          className={`w-full px-3 py-2 rounded-md border ${
+            isDarkMode
+              ? 'border-gray-600 bg-gray-700 text-white'
+              : 'border-gray-300 bg-white'
+          } focus:ring-2 focus:ring-blue-500`}
+        />
+      </div>
+    </div>
+  );
+};
+
+export default FreightItems;
