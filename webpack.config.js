@@ -5,7 +5,7 @@ const path = require('path');
 
 module.exports = {
   mode: process.env.NODE_ENV || 'development',
-  entry: './src/index.js',
+  entry: './src/bootstrap.js',
   output: {
     publicPath: 'auto',
     path: path.resolve(__dirname, 'dist'),
@@ -41,12 +41,8 @@ module.exports = {
   },
   plugins: [
     new webpack.DefinePlugin({
-      'process.env.REACT_APP_API_URL': JSON.stringify(process.env.REACT_APP_API_URL || 'http://localhost:3001/api'),
+      'process.env.REACT_APP_API_URL': JSON.stringify(process.env.REACT_APP_API_URL || 'https://api.gcc.conship.ai/api'),
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
-      'process.env': JSON.stringify({
-        REACT_APP_API_URL: process.env.REACT_APP_API_URL || 'http://localhost:3001/api',
-        NODE_ENV: process.env.NODE_ENV || 'development'
-      })
     }),
     new ModuleFederationPlugin({
       name: 'quotes',
@@ -54,19 +50,22 @@ module.exports = {
       exposes: {
         './App': './src/App',
         './Widget': './src/Widget',
-         },
+      },
       shared: {
-        ...require('./package.json').dependencies,
         react: {
           singleton: true,
           requiredVersion: require('./package.json').dependencies.react,
+          eager: false,
         },
         'react-dom': {
           singleton: true,
           requiredVersion: require('./package.json').dependencies['react-dom'],
+          eager: false,
         },
         'react-router-dom': { 
-          singleton: true
+          singleton: true,
+          requiredVersion: require('./package.json').dependencies['react-router-dom'],
+          eager: false,
         },
       },
     }),
