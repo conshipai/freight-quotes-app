@@ -59,11 +59,11 @@ module.exports = {
         react: { 
           singleton: true,
           requiredVersion: false,
-          eager: false
+          eager: true
         },
         'react-dom': { 
           singleton: true,
-          requiredVersion: false,
+          requiredVersion: true,
           eager: false
         },
         'react-router-dom': { 
