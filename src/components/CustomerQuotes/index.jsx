@@ -3,10 +3,10 @@ import React from 'react';
 import { Routes, Route, NavLink } from 'react-router-dom';
 import { Plane, Ship, Truck, ArrowDown, ArrowUp } from 'lucide-react';
 import GroundQuotes from './GroundQuotes';
-import ImportAir from './ImportAir';
-import ImportOcean from './ImportOcean';
-import ExportAir from './ExportAir';
-import ExportOcean from './ExportOcean';
+// import ImportAir from './ImportAir';
+// import ImportOcean from './ImportOcean';
+// import ExportAir from './ExportAir';
+// import ExportOcean from './ExportOcean';
 
 const CustomerQuotes = ({ shellContext }) => {
   const isDarkMode = shellContext?.isDarkMode;
