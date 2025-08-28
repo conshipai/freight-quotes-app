@@ -52,9 +52,9 @@ module.exports = {
       name: 'quotes',
       filename: 'remoteEntry.js',
       exposes: {
-        './App': './src/App',
+        './App': './src/bootstrap.js',
         './Widget': './src/Widget',
-      },
+         },
       shared: {
         ...require('./package.json').dependencies,
         react: {
