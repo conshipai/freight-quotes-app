@@ -43,7 +43,6 @@ module.exports = {
     new webpack.DefinePlugin({
       'process.env.REACT_APP_API_URL': JSON.stringify(process.env.REACT_APP_API_URL || 'http://localhost:3001/api'),
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
-      // Add this to prevent runtime "process is not defined" errors
       'process.env': JSON.stringify({
         REACT_APP_API_URL: process.env.REACT_APP_API_URL || 'http://localhost:3001/api',
         NODE_ENV: process.env.NODE_ENV || 'development'
@@ -58,18 +57,14 @@ module.exports = {
       shared: {
         react: { 
           singleton: true,
-          requiredVersion: false,
           eager: true
         },
         'react-dom': { 
           singleton: true,
-          requiredVersion: true,
-          eager: false
+          eager: true
         },
         'react-router-dom': { 
-          singleton: true,
-          requiredVersion: false,
-          eager: false
+          singleton: true
         },
       },
     }),
