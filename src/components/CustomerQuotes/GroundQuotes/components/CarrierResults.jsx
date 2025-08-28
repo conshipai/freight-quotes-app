@@ -5,12 +5,21 @@ import {
   ChevronDown, ChevronUp, Check, Info, Star 
 } from 'lucide-react';
 
-const CarrierResults = ({ rates, formData, onBack, onBook, isDarkMode }) => {
+const CarrierResults = ({ rates, formData, requestId, onBack, onBook, isDarkMode }) => {
   const [expandedRate, setExpandedRate] = useState(null);
   const [selectedRate, setSelectedRate] = useState(null);
 
-  // Group rates by carrier
-  const groupedRates = rates.rates.reduce((acc, rate) => {
+  // Handle both old format (rates.rates) and new format (rates as array)
+  const ratesList = Array.isArray(rates) ? rates : (rates.rates || []);
+  
+  // Filter only successful rates
+  const successfulRates = ratesList.filter(rate => rate.success);
+
+  // Get error rates for display
+  const errorRates = ratesList.filter(rate => !rate.success);
+
+  // Group successful rates by carrier
+  const groupedRates = successfulRates.reduce((acc, rate) => {
     if (!acc[rate.carrier]) {
       acc[rate.carrier] = [];
     }
@@ -80,10 +89,16 @@ const CarrierResults = ({ rates, formData, onBack, onBook, isDarkMode }) => {
             </span>
           </div>
         </div>
+        {requestId && (
+          <div className="mt-2 text-xs">
+            <span className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Request ID:</span>
+            <span className={`ml-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{requestId}</span>
+          </div>
+        )}
       </div>
 
       {/* Error Messages */}
-      {rates.errors && rates.errors.length > 0 && (
+      {errorRates.length > 0 && (
         <div className={`mb-6 p-4 rounded-lg ${
           isDarkMode ? 'bg-yellow-900/20 border border-yellow-800' : 'bg-yellow-50 border border-yellow-200'
         }`}>
@@ -94,9 +109,9 @@ const CarrierResults = ({ rates, formData, onBack, onBook, isDarkMode }) => {
                 Some carriers couldn't provide rates:
               </h4>
               <ul className="mt-2 space-y-1">
-                {rates.errors.map((error, idx) => (
+                {errorRates.map((rate, idx) => (
                   <li key={idx} className={`text-sm ${isDarkMode ? 'text-yellow-400' : 'text-yellow-700'}`}>
-                    {error.carrier}: {error.message}
+                    {rate.carrier}: {rate.message || 'Failed to get rates'}
                   </li>
                 ))}
               </ul>
@@ -106,7 +121,7 @@ const CarrierResults = ({ rates, formData, onBack, onBook, isDarkMode }) => {
       )}
 
       {/* Rates Display */}
-      {rates.rates.length === 0 ? (
+      {successfulRates.length === 0 ? (
         <div className={`text-center py-12 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
           <Truck className="w-16 h-16 mx-auto mb-4 opacity-50" />
           <p className="text-lg">No rates available for this route.</p>
