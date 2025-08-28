@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Package, AlertCircle, Loader2 } from 'lucide-react';
-import ShipmentDetails from './components/ShipmentDetails';
+// import ShipmentDetails from './components/ShipmentDetails';
 import FreightItems from './components/FreightItems';
 import CarrierResults from './components/CarrierResults';
 import { getLTLRates } from '../../../services/ltlService';
