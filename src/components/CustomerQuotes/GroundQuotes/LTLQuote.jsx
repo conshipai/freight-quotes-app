@@ -1,410 +1,395 @@
-// src/components/CustomerQuotes/GroundQuotes/components/ShipmentDetails.jsx
-import React from 'react';
-import { MapPin, Calendar, Building2, Home } from 'lucide-react';
+// src/components/CustomerQuotes/GroundQuotes/LTLQuote.jsx
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Package, AlertCircle, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+import ShipmentDetails from './components/ShipmentDetails';
+import FreightItems from './components/FreightItems';
+import CarrierResults from './components/CarrierResults';
+import { createQuoteRequest, getQuoteStatus } from '../../../services/mockQuoteService';
 
-const ShipmentDetails = ({ formData, updateFormData, errors, isDarkMode }) => {
-  const states = [
-    'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
-    'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
-    'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
-    'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
-    'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'
-  ];
-
-  const handleZipChange = async (type, zip) => {
-    updateFormData({ [`${type}Zip`]: zip });
+const LTLQuote = ({ shellContext, customerCarriers, customerId }) => {
+  const navigate = useNavigate();
+  const isDarkMode = shellContext?.isDarkMode;
+  const [step, setStep] = useState(1); // 1: Details, 2: Processing, 3: Results
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [carrierRates, setCarrierRates] = useState([]);
+  const [requestId, setRequestId] = useState(null);
+  const [quoteStatus, setQuoteStatus] = useState(null);
+  const [carrierResponses, setCarrierResponses] = useState([]);
+  const pollingInterval = useRef(null);
+  
+  const [formData, setFormData] = useState({
+    // Project Reference
+    projectReference: '',
     
-    // Auto-populate city/state from ZIP if 5 digits entered
-    if (zip.length === 5) {
+    // Shipment Details
+    pickupDate: '',
+    
+    // Origin
+    originZip: '',
+    originCity: '',
+    originState: '',
+    originType: 'business',
+    originAccessorials: {
+      liftgate: false,
+      insidePickup: false,
+      residential: false,
+      limitedAccess: false,
+      constructionSite: false
+    },
+    
+    // Destination
+    destinationZip: '',
+    destinationCity: '',
+    destinationState: '',
+    destinationType: 'business',
+    destinationAccessorials: {
+      liftgate: false,
+      insideDelivery: false,
+      residential: false,
+      limitedAccess: false,
+      notifyBeforeDelivery: false,
+      constructionSite: false
+    },
+    
+    // Freight Details
+    units: 'imperial',
+    items: [{
+      id: 1,
+      class: '50',
+      weight: '',
+      length: '',
+      width: '',
+      height: '',
+      quantity: 1,
+      packagingType: 'pallets',
+      description: '',
+      nmfc: '',
+      hazmat: false,
+      stackable: true
+    }],
+    
+    // Additional Services
+    insurance: {
+      requested: false,
+      value: 0
+    },
+    
+    // Special Instructions
+    specialInstructions: ''
+  });
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingInterval.current) {
+        clearInterval(pollingInterval.current);
+      }
+    };
+  }, []);
+
+  const updateFormData = (updates) => {
+    setFormData(prev => ({ ...prev, ...updates }));
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.originZip || formData.originZip.length !== 5) {
+      newErrors.originZip = 'Valid 5-digit origin ZIP required';
+    }
+
+    if (!formData.destinationZip || formData.destinationZip.length !== 5) {
+      newErrors.destinationZip = 'Valid 5-digit destination ZIP required';
+    }
+
+    if (!formData.pickupDate) {
+      newErrors.pickupDate = 'Pickup date required';
+    }
+
+    if (!formData.items.some(item => item.weight && item.class)) {
+      newErrors.items = 'At least one freight item with weight and class required';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const startPolling = (requestId) => {
+    pollingInterval.current = setInterval(async () => {
       try {
-        // You'll implement this API endpoint
-        const response = await fetch(`/api/location/zip/${zip}`);
-        if (response.ok) {
-          const data = await response.json();
-          updateFormData({
-            [`${type}City`]: data.city,
-            [`${type}State`]: data.state
-          });
+        const data = await getQuoteStatus(requestId);
+        
+        setQuoteStatus(data);
+        setCarrierResponses(data.responses || []);
+
+        // Stop polling when all carriers have responded or on error
+        if (data.status === 'completed' || data.status === 'error') {
+          clearInterval(pollingInterval.current);
+          pollingInterval.current = null;
+          
+          if (data.status === 'completed') {
+            setCarrierRates(data.responses || []);
+            setStep(3); // Move to results
+          }
         }
       } catch (error) {
-        console.error('Error fetching location data:', error);
+        console.error('Polling error:', error);
+        clearInterval(pollingInterval.current);
+        pollingInterval.current = null;
+        setErrors({ submit: 'Error checking quote status' });
+        setStep(1);
       }
+    }, 5000); // Poll every 5 seconds for testing
+  };
+
+  const handleSubmitQuote = async () => {
+    if (!validateForm()) return;
+
+    setLoading(true);
+    setStep(2); // Move to processing view
+    
+    try {
+      // Use mock service instead of direct API call
+      const { requestId, status } = await createQuoteRequest({
+        type: 'ground-ltl',
+        customerId,
+        shipmentData: formData
+      });
+      
+      setRequestId(requestId);
+      setQuoteStatus({ status, message: 'Request submitted' });
+      
+      // Start polling for updates
+      startPolling(requestId);
+      
+      // Check immediately
+      setTimeout(async () => {
+        try {
+          const statusData = await getQuoteStatus(requestId);
+          setQuoteStatus(statusData);
+          setCarrierResponses(statusData.responses || []);
+        } catch (error) {
+          console.error('Status check error:', error);
+        }
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Submit error:', error);
+      setErrors({ 
+        submit: 'Failed to submit quote request. Please try again.' 
+      });
+      setStep(1);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const accessorialOptions = {
-    origin: [
-      { key: 'liftgate', label: 'Liftgate at Pickup' },
-      { key: 'insidePickup', label: 'Inside Pickup' },
-      { key: 'residential', label: 'Residential Pickup' },
-      { key: 'limitedAccess', label: 'Limited Access' },
-      { key: 'constructionSite', label: 'Construction Site' }
-    ],
-    destination: [
-      { key: 'liftgate', label: 'Liftgate at Delivery' },
-      { key: 'insideDelivery', label: 'Inside Delivery' },
-      { key: 'residential', label: 'Residential Delivery' },
-      { key: 'limitedAccess', label: 'Limited Access' },
-      { key: 'notifyBeforeDelivery', label: 'Appointment Required' },
-      { key: 'constructionSite', label: 'Construction Site' }
-    ]
+  const handleBook = (carrier, rate) => {
+    navigate('/quotes/booking', {
+      state: {
+        carrier,
+        rate,
+        shipmentDetails: formData,
+        quoteType: 'ground-ltl',
+        requestId
+      }
+    });
+  };
+
+  const renderProcessingView = () => {
+    const totalCarriers = carrierResponses.length;
+    const completedCarriers = carrierResponses.filter(r => r.timestamp).length;
+
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <div className={`rounded-full p-6 mb-6 ${
+          isDarkMode ? 'bg-gray-800' : 'bg-gray-100'
+        }`}>
+          <Loader2 className="w-12 h-12 animate-spin text-conship-orange" />
+        </div>
+        
+        <h3 className={`text-xl font-semibold mb-2 ${
+          isDarkMode ? 'text-white' : 'text-gray-900'
+        }`}>
+          Processing Your Quote Request
+        </h3>
+        
+        <p className={`text-center mb-6 ${
+          isDarkMode ? 'text-gray-400' : 'text-gray-600'
+        }`}>
+          Getting rates from {totalCarriers} carrier{totalCarriers !== 1 ? 's' : ''}...
+        </p>
+
+        {/* Progress */}
+        {totalCarriers > 0 && (
+          <div className="w-full max-w-md mb-6">
+            <div className={`h-2 rounded-full overflow-hidden ${
+              isDarkMode ? 'bg-gray-700' : 'bg-gray-200'
+            }`}>
+              <div 
+                className="h-full bg-conship-orange transition-all duration-500"
+                style={{ width: `${(completedCarriers / totalCarriers) * 100}%` }}
+              />
+            </div>
+            <p className={`text-center text-sm mt-2 ${
+              isDarkMode ? 'text-gray-400' : 'text-gray-600'
+            }`}>
+              {completedCarriers} of {totalCarriers} carrier{totalCarriers !== 1 ? 's' : ''} responded
+            </p>
+          </div>
+        )}
+
+        {/* Carrier Status List */}
+        {carrierResponses.length > 0 && (
+          <div className="w-full max-w-md space-y-2">
+            {carrierResponses.map((response, idx) => (
+              <div
+                key={idx}
+                className={`flex items-center justify-between p-3 rounded-lg ${
+                  isDarkMode ? 'bg-gray-800' : 'bg-gray-50'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  {response.timestamp ? (
+                    response.success ? (
+                      <CheckCircle2 className="w-5 h-5 text-green-500" />
+                    ) : (
+                      <XCircle className="w-5 h-5 text-red-500" />
+                    )
+                  ) : (
+                    <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+                  )}
+                  <span className={isDarkMode ? 'text-white' : 'text-gray-900'}>
+                    {response.carrier}
+                  </span>
+                </div>
+                {response.timestamp && (
+                  <span className={`text-sm ${
+                    response.success
+                      ? isDarkMode ? 'text-green-400' : 'text-green-600'
+                      : isDarkMode ? 'text-red-400' : 'text-red-600'
+                  }`}>
+                    {response.success ? 'Rates received' : 'Failed'}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Request ID */}
+        {requestId && (
+          <p className={`text-xs mt-4 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+            Request ID: {requestId}
+          </p>
+        )}
+      </div>
+    );
   };
 
   return (
-    <div className={`space-y-6 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-      {/* Project Reference */}
-      <div>
-        <label className={`block text-sm font-medium mb-2 ${
-          isDarkMode ? 'text-gray-300' : 'text-gray-700'
-        }`}>
-          Project/Reference Number (Optional)
-        </label>
-        <input
-          type="text"
-          value={formData.projectReference}
-          onChange={(e) => updateFormData({ projectReference: e.target.value })}
-          placeholder="Enter reference number"
-          className={`w-full px-3 py-2 rounded-md border ${
-            isDarkMode
-              ? 'border-gray-600 bg-gray-700 text-white'
-              : 'border-gray-300 bg-white'
-          } focus:ring-2 focus:ring-blue-500`}
-        />
-      </div>
-
-      {/* Pickup Date */}
-      <div>
-        <label className={`block text-sm font-medium mb-2 ${
-          isDarkMode ? 'text-gray-300' : 'text-gray-700'
-        }`}>
-          <Calendar className="inline w-4 h-4 mr-1" />
-          Pickup Date
-        </label>
-        <input
-          type="date"
-          value={formData.pickupDate}
-          onChange={(e) => updateFormData({ pickupDate: e.target.value })}
-          min={new Date().toISOString().split('T')[0]}
-          className={`w-full px-3 py-2 rounded-md border ${
-            errors.pickupDate
-              ? 'border-red-500'
-              : isDarkMode
-                ? 'border-gray-600 bg-gray-700 text-white'
-                : 'border-gray-300 bg-white'
-          } focus:ring-2 focus:ring-blue-500`}
-        />
-        {errors.pickupDate && (
-          <p className="mt-1 text-sm text-red-500">{errors.pickupDate}</p>
-        )}
-      </div>
-
-      {/* Origin Section */}
-      <div className={`p-4 rounded-lg border ${
-        isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-gray-50'
-      }`}>
-        <h4 className={`font-medium mb-4 flex items-center gap-2 ${
-          isDarkMode ? 'text-white' : 'text-gray-900'
-        }`}>
-          <MapPin className="w-4 h-4" />
-          Origin Information
-        </h4>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <div>
-            <label className={`block text-sm font-medium mb-1 ${
-              isDarkMode ? 'text-gray-300' : 'text-gray-700'
-            }`}>
-              ZIP Code
-            </label>
-            <input
-              type="text"
-              value={formData.originZip}
-              onChange={(e) => handleZipChange('origin', e.target.value)}
-              maxLength="5"
-              placeholder="12345"
-              className={`w-full px-3 py-2 rounded-md border ${
-                errors.originZip
-                  ? 'border-red-500'
-                  : isDarkMode
-                    ? 'border-gray-600 bg-gray-700 text-white'
-                    : 'border-gray-300 bg-white'
-              } focus:ring-2 focus:ring-blue-500`}
-            />
-            {errors.originZip && (
-              <p className="mt-1 text-sm text-red-500">{errors.originZip}</p>
-            )}
-          </div>
-
-          <div>
-            <label className={`block text-sm font-medium mb-1 ${
-              isDarkMode ? 'text-gray-300' : 'text-gray-700'
-            }`}>
-              City
-            </label>
-            <input
-              type="text"
-              value={formData.originCity}
-              onChange={(e) => updateFormData({ originCity: e.target.value })}
-              placeholder="City name"
-              className={`w-full px-3 py-2 rounded-md border ${
-                isDarkMode
-                  ? 'border-gray-600 bg-gray-700 text-white'
-                  : 'border-gray-300 bg-white'
-              } focus:ring-2 focus:ring-blue-500`}
-            />
-          </div>
-
-          <div>
-            <label className={`block text-sm font-medium mb-1 ${
-              isDarkMode ? 'text-gray-300' : 'text-gray-700'
-            }`}>
-              State
-            </label>
-            <select
-              value={formData.originState}
-              onChange={(e) => updateFormData({ originState: e.target.value })}
-              className={`w-full px-3 py-2 rounded-md border ${
-                isDarkMode
-                  ? 'border-gray-600 bg-gray-700 text-white'
-                  : 'border-gray-300 bg-white'
-              } focus:ring-2 focus:ring-blue-500`}
-            >
-              <option value="">Select state</option>
-              {states.map(state => (
-                <option key={state} value={state}>{state}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="mb-4">
-          <label className={`block text-sm font-medium mb-2 ${
-            isDarkMode ? 'text-gray-300' : 'text-gray-700'
-          }`}>
-            Location Type
-          </label>
-          <div className="flex gap-4">
-            <label className="flex items-center">
-              <input
-                type="radio"
-                value="business"
-                checked={formData.originType === 'business'}
-                onChange={(e) => updateFormData({ originType: e.target.value })}
-                className="mr-2"
-              />
-              <Building2 className="w-4 h-4 mr-1" />
-              <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                Business
-              </span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="radio"
-                value="residential"
-                checked={formData.originType === 'residential'}
-                onChange={(e) => {
-                  updateFormData({ 
-                    originType: e.target.value,
-                    originAccessorials: {
-                      ...formData.originAccessorials,
-                      residential: true
-                    }
-                  });
-                }}
-                className="mr-2"
-              />
-              <Home className="w-4 h-4 mr-1" />
-              <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                Residential
-              </span>
-            </label>
-          </div>
-        </div>
-
+    <>
+      {step === 1 ? (
         <div>
-          <label className={`block text-sm font-medium mb-2 ${
-            isDarkMode ? 'text-gray-300' : 'text-gray-700'
+          <h3 className={`text-xl font-semibold mb-6 ${
+            isDarkMode ? 'text-white' : 'text-gray-900'
           }`}>
-            Accessorials
-          </label>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {accessorialOptions.origin.map(option => (
-              <label key={option.key} className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={formData.originAccessorials[option.key]}
-                  onChange={(e) => updateFormData({
-                    originAccessorials: {
-                      ...formData.originAccessorials,
-                      [option.key]: e.target.checked
-                    }
-                  })}
-                  disabled={option.key === 'residential' && formData.originType === 'residential'}
-                  className="mr-2"
-                />
-                <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                  {option.label}
-                </span>
-              </label>
-            ))}
-          </div>
-        </div>
-      </div>
+            LTL Shipment Details
+          </h3>
 
-      {/* Destination Section */}
-      <div className={`p-4 rounded-lg border ${
-        isDarkMode ? 'border-gray-700 bg-gray-800' : 'border-gray-200 bg-gray-50'
-      }`}>
-        <h4 className={`font-medium mb-4 flex items-center gap-2 ${
-          isDarkMode ? 'text-white' : 'text-gray-900'
-        }`}>
-          <MapPin className="w-4 h-4" />
-          Destination Information
-        </h4>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <div>
-            <label className={`block text-sm font-medium mb-1 ${
-              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+          {/* Error Display */}
+          {Object.keys(errors).length > 0 && (
+            <div className={`mb-6 p-4 rounded-lg ${
+              isDarkMode ? 'bg-red-900/20 border border-red-800' : 'bg-red-50 border border-red-200'
             }`}>
-              ZIP Code
-            </label>
-            <input
-              type="text"
-              value={formData.destinationZip}
-              onChange={(e) => handleZipChange('destination', e.target.value)}
-              maxLength="5"
-              placeholder="12345"
-              className={`w-full px-3 py-2 rounded-md border ${
-                errors.destinationZip
-                  ? 'border-red-500'
-                  : isDarkMode
-                    ? 'border-gray-600 bg-gray-700 text-white'
-                    : 'border-gray-300 bg-white'
-              } focus:ring-2 focus:ring-blue-500`}
-            />
-            {errors.destinationZip && (
-              <p className="mt-1 text-sm text-red-500">{errors.destinationZip}</p>
-            )}
-          </div>
+              <div className="flex">
+                <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
+                <div className="ml-3">
+                  <h3 className={`text-sm font-medium ${isDarkMode ? 'text-red-300' : 'text-red-800'}`}>
+                    Please fix the following errors:
+                  </h3>
+                  <ul className="mt-2 text-sm list-disc pl-5">
+                    {Object.entries(errors).map(([key, error]) => (
+                      <li key={key} className={isDarkMode ? 'text-red-400' : 'text-red-700'}>
+                        {error}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
 
-          <div>
-            <label className={`block text-sm font-medium mb-1 ${
-              isDarkMode ? 'text-gray-300' : 'text-gray-700'
-            }`}>
-              City
-            </label>
-            <input
-              type="text"
-              value={formData.destinationCity}
-              onChange={(e) => updateFormData({ destinationCity: e.target.value })}
-              placeholder="City name"
-              className={`w-full px-3 py-2 rounded-md border ${
+          {/* Shipment Details Form */}
+          <ShipmentDetails
+            formData={formData}
+            updateFormData={updateFormData}
+            errors={errors}
+            isDarkMode={isDarkMode}
+          />
+
+          {/* Freight Items */}
+          <FreightItems
+            formData={formData}
+            updateFormData={updateFormData}
+            errors={errors}
+            isDarkMode={isDarkMode}
+          />
+
+          {/* Get Rates Button */}
+          <div className="flex justify-end gap-4 mt-6">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className={`px-6 py-2 rounded-lg border ${
                 isDarkMode
-                  ? 'border-gray-600 bg-gray-700 text-white'
-                  : 'border-gray-300 bg-white'
-              } focus:ring-2 focus:ring-blue-500`}
-            />
-          </div>
-
-          <div>
-            <label className={`block text-sm font-medium mb-1 ${
-              isDarkMode ? 'text-gray-300' : 'text-gray-700'
-            }`}>
-              State
-            </label>
-            <select
-              value={formData.destinationState}
-              onChange={(e) => updateFormData({ destinationState: e.target.value })}
-              className={`w-full px-3 py-2 rounded-md border ${
-                isDarkMode
-                  ? 'border-gray-600 bg-gray-700 text-white'
-                  : 'border-gray-300 bg-white'
-              } focus:ring-2 focus:ring-blue-500`}
+                  ? 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                  : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+              }`}
             >
-              <option value="">Select state</option>
-              {states.map(state => (
-                <option key={state} value={state}>{state}</option>
-              ))}
-            </select>
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmitQuote}
+              disabled={loading}
+              className={`px-6 py-3 rounded-lg text-white font-medium flex items-center gap-2 ${
+                loading
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : isDarkMode
+                    ? 'bg-conship-orange hover:bg-orange-600'
+                    : 'bg-conship-purple hover:bg-purple-800'
+              }`}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Getting Rates...
+                </>
+              ) : (
+                <>
+                  <Package className="w-5 h-5" />
+                  Get LTL Rates
+                </>
+              )}
+            </button>
           </div>
         </div>
-
-        <div className="mb-4">
-          <label className={`block text-sm font-medium mb-2 ${
-            isDarkMode ? 'text-gray-300' : 'text-gray-700'
-          }`}>
-            Location Type
-          </label>
-          <div className="flex gap-4">
-            <label className="flex items-center">
-              <input
-                type="radio"
-                value="business"
-                checked={formData.destinationType === 'business'}
-                onChange={(e) => updateFormData({ destinationType: e.target.value })}
-                className="mr-2"
-              />
-              <Building2 className="w-4 h-4 mr-1" />
-              <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                Business
-              </span>
-            </label>
-            <label className="flex items-center">
-              <input
-                type="radio"
-                value="residential"
-                checked={formData.destinationType === 'residential'}
-                onChange={(e) => {
-                  updateFormData({ 
-                    destinationType: e.target.value,
-                    destinationAccessorials: {
-                      ...formData.destinationAccessorials,
-                      residential: true
-                    }
-                  });
-                }}
-                className="mr-2"
-              />
-              <Home className="w-4 h-4 mr-1" />
-              <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                Residential
-              </span>
-            </label>
-          </div>
-        </div>
-
-        <div>
-          <label className={`block text-sm font-medium mb-2 ${
-            isDarkMode ? 'text-gray-300' : 'text-gray-700'
-          }`}>
-            Accessorials
-          </label>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {accessorialOptions.destination.map(option => (
-              <label key={option.key} className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={formData.destinationAccessorials[option.key]}
-                  onChange={(e) => updateFormData({
-                    destinationAccessorials: {
-                      ...formData.destinationAccessorials,
-                      [option.key]: e.target.checked
-                    }
-                  })}
-                  disabled={option.key === 'residential' && formData.destinationType === 'residential'}
-                  className="mr-2"
-                />
-                <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                  {option.label}
-                </span>
-              </label>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
+      ) : step === 2 ? (
+        renderProcessingView()
+      ) : (
+        <CarrierResults
+          rates={carrierRates}
+          formData={formData}
+          requestId={requestId}
+          onBack={() => setStep(1)}
+          onBook={handleBook}
+          isDarkMode={isDarkMode}
+        />
+      )}
+    </>
   );
 };
 
-export default ShipmentDetails;
+export default LTLQuote;
