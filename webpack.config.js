@@ -10,6 +10,7 @@ module.exports = {
     publicPath: 'auto',
     path: path.resolve(__dirname, 'dist'),
     filename: '[name].[contenthash].js',
+    clean: true,
   },
   resolve: {
     extensions: ['.jsx', '.js', '.json'],
@@ -37,12 +38,18 @@ module.exports = {
         test: /\.css$/,
         use: ['style-loader', 'css-loader', 'postcss-loader'],
       },
+      {
+        test: /\.(png|jpg|jpeg|gif|svg)$/,
+        type: 'asset/resource',
+      },
     ],
   },
   plugins: [
     new webpack.DefinePlugin({
-      'process.env.REACT_APP_API_URL': JSON.stringify(process.env.REACT_APP_API_URL || 'https://api.gcc.conship.ai/api'),
-      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
+      'process.env': JSON.stringify({
+        REACT_APP_API_URL: process.env.REACT_APP_API_URL || 'https://api.gcc.conship.ai/api',
+        NODE_ENV: process.env.NODE_ENV || 'development',
+      })
     }),
     new ModuleFederationPlugin({
       name: 'quotes',
@@ -55,22 +62,20 @@ module.exports = {
         react: {
           singleton: true,
           requiredVersion: require('./package.json').dependencies.react,
-          eager: false,
         },
         'react-dom': {
           singleton: true,
           requiredVersion: require('./package.json').dependencies['react-dom'],
-          eager: false,
         },
         'react-router-dom': { 
           singleton: true,
           requiredVersion: require('./package.json').dependencies['react-router-dom'],
-          eager: false,
         },
       },
     }),
     new HtmlWebpackPlugin({
-      template: './public/index.html',
+      template: path.resolve(__dirname, 'public', 'index.html'),
+      filename: 'index.html',
     }),
   ],
 };
