@@ -42,7 +42,12 @@ module.exports = {
   plugins: [
     new webpack.DefinePlugin({
       'process.env.REACT_APP_API_URL': JSON.stringify(process.env.REACT_APP_API_URL || 'http://localhost:3001/api'),
-      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
+      // Add this to prevent runtime "process is not defined" errors
+      'process.env': JSON.stringify({
+        REACT_APP_API_URL: process.env.REACT_APP_API_URL || 'http://localhost:3001/api',
+        NODE_ENV: process.env.NODE_ENV || 'development'
+      })
     }),
     new ModuleFederationPlugin({
       name: 'quotes',
