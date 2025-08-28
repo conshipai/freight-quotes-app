@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import CustomerQuotes from '../components/CustomerQuotes';
 import PartnerQuotes from '../components/PartnerQuotes';
+import BookingPage from '../components/Booking/BookingPage';
 import ViewToggle from '../components/ViewToggle';
 
 const QuoteRouter = ({ userRole, shellContext }) => {
@@ -65,6 +66,13 @@ const QuoteRouter = ({ userRole, shellContext }) => {
       
       {/* Routes */}
       <Routes>
+        {/* Booking Route - Available for all views */}
+        <Route 
+          path="/booking" 
+          element={<BookingPage shellContext={shellContext} />} 
+        />
+        
+        {/* Main Routes */}
         <Route 
           path="/*" 
           element={
