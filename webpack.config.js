@@ -56,13 +56,14 @@ module.exports = {
         './Widget': './src/Widget',
       },
       shared: {
-        react: { 
+        ...require('./package.json').dependencies,
+        react: {
           singleton: true,
-          eager: true
+          requiredVersion: require('./package.json').dependencies.react,
         },
-        'react-dom': { 
+        'react-dom': {
           singleton: true,
-          eager: true
+          requiredVersion: require('./package.json').dependencies['react-dom'],
         },
         'react-router-dom': { 
           singleton: true
