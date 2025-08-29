@@ -1,9 +1,10 @@
-// src/components/PartnerQuotes/QuoteHistory.jsx
+// src/components/PartnerQuotes/QuoteHistory.jsx - Updated for both views
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Search, Filter, Clock, CheckCircle, AlertCircle, 
-  Loader2, TrendingUp, ChevronRight, Calendar
+  Loader2, TrendingUp, ChevronRight, Calendar,
+  Truck, Plane, Ship, Globe, Package
 } from 'lucide-react';
 import axios from 'axios';
 
@@ -11,42 +12,10 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
 // Progress Pill Component (reusable)
 const ProgressPill = ({ label, status, details }) => {
-  const getStatusIcon = () => {
-    switch(status) {
-      case 'complete':
-        return <CheckCircle className="h-3 w-3 text-green-600" />;
-      case 'in-progress':
-        return <Loader2 className="h-3 w-3 text-orange-600 animate-spin" />;
-      case 'pending':
-        return <Clock className="h-3 w-3 text-gray-400" />;
-      default:
-        return null;
-    }
-  };
-
-  const getStatusClass = () => {
-    switch(status) {
-      case 'complete':
-        return 'bg-green-100 text-green-800 border-green-300';
-      case 'in-progress':
-        return 'bg-orange-100 text-orange-800 border-orange-300';
-      case 'pending':
-        return 'bg-gray-100 text-gray-600 border-gray-300';
-      default:
-        return 'bg-gray-50 text-gray-500 border-gray-200';
-    }
-  };
-
-  return (
-    <div className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full border ${getStatusClass()}`}>
-      {getStatusIcon()}
-      <span>{label}</span>
-      {details && <span className="text-[10px] opacity-75">({details})</span>}
-    </div>
-  );
+  // ... existing code
 };
 
-const QuoteHistory = ({ shellContext }) => {
+const QuoteHistory = ({ shellContext, viewMode = 'agent' }) => {
   const navigate = useNavigate();
   const isDarkMode = shellContext?.isDarkMode;
   
@@ -55,22 +24,75 @@ const QuoteHistory = ({ shellContext }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
 
   // Load quotes on mount
   useEffect(() => {
     loadQuotes();
-  }, []);
+  }, [viewMode]);
 
   const loadQuotes = async () => {
     try {
       setLoading(true);
       
-      // Mock data for now - replace with API call
-      const mockQuotes = [
+      // Mock data - adjust based on viewMode
+      const mockQuotes = viewMode === 'customer' ? [
+        // Customer sees all types of quotes
         {
           id: 'Q-2024-10001',
           requestNumber: 'REQ-2024-10001',
+          type: 'ground-ltl',
+          origin: 'Los Angeles, CA',
+          destination: 'Phoenix, AZ',
+          createdAt: new Date().toISOString(),
+          status: 'ready',
+          totalWeight: '500 lbs',
+          totalPieces: 3,
+          carrierResponses: 4,
+          maxCarriers: 5,
+          quoteType: 'Ground - LTL',
+          icon: Truck,
+          validUntil: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          id: 'Q-2024-10002',
+          requestNumber: 'REQ-2024-10002',
+          type: 'import-air',
+          origin: 'LHR - London',
+          destination: 'LAX - Los Angeles',
+          createdAt: new Date(Date.now() - 86400000).toISOString(),
+          status: 'processing',
+          totalWeight: '100 kg',
+          totalPieces: 2,
+          carrierResponses: 2,
+          maxCarriers: 4,
+          quoteType: 'Import Air',
+          icon: Globe,
+          validUntil: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          id: 'Q-2024-10003',
+          requestNumber: 'REQ-2024-10003',
+          type: 'export-ocean',
+          origin: 'LAX - Los Angeles',
+          destination: 'Shanghai Port',
+          createdAt: new Date(Date.now() - 172800000).toISOString(),
+          status: 'ready',
+          totalWeight: '2000 kg',
+          totalPieces: 10,
+          carrierResponses: 3,
+          maxCarriers: 3,
+          quoteType: 'Export Ocean',
+          icon: Ship,
+          validUntil: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+        }
+      ] : [
+        // Agent sees only export quotes
+        {
+          id: 'Q-2024-10001',
+          requestNumber: 'REQ-2024-10001',
+          type: 'export-air',
           origin: 'LAX - Los Angeles',
           destination: 'LHR - London Heathrow',
           createdAt: new Date().toISOString(),
@@ -79,6 +101,8 @@ const QuoteHistory = ({ shellContext }) => {
           totalPieces: 2,
           carrierResponses: 5,
           maxCarriers: 5,
+          quoteType: 'Export Air',
+          icon: Plane,
           progress: {
             origin: { status: 'complete', details: 'Pickup arranged' },
             airfreight: { status: 'complete', details: '5/5 carriers' },
@@ -89,38 +113,23 @@ const QuoteHistory = ({ shellContext }) => {
         {
           id: 'Q-2024-10002',
           requestNumber: 'REQ-2024-10002',
-          origin: 'JFK - New York',
-          destination: 'NRT - Tokyo Narita',
+          type: 'export-ocean',
+          origin: 'LAX - Los Angeles',
+          destination: 'Shanghai Port',
           createdAt: new Date(Date.now() - 86400000).toISOString(),
           status: 'processing',
-          totalWeight: '250 kg',
-          totalPieces: 5,
-          carrierResponses: 3,
-          maxCarriers: 8,
+          totalWeight: '5000 kg',
+          totalPieces: 20,
+          carrierResponses: 2,
+          maxCarriers: 4,
+          quoteType: 'Export Ocean',
+          icon: Ship,
           progress: {
             origin: { status: 'complete', details: 'Received' },
-            airfreight: { status: 'in-progress', details: '3/8 carriers' },
+            ocean: { status: 'in-progress', details: '2/4 carriers' },
             destination: { status: 'pending', details: null }
           },
-          validUntil: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: 'Q-2024-10003',
-          requestNumber: 'REQ-2024-10003',
-          origin: 'ORD - Chicago',
-          destination: 'FRA - Frankfurt',
-          createdAt: new Date(Date.now() - 172800000).toISOString(),
-          status: 'pending',
-          totalWeight: '75 kg',
-          totalPieces: 1,
-          carrierResponses: 0,
-          maxCarriers: 8,
-          progress: {
-            origin: { status: 'complete', details: 'Received' },
-            airfreight: { status: 'pending', details: 'Awaiting carriers' },
-            destination: { status: 'pending', details: null }
-          },
-          validUntil: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString()
+          validUntil: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
         }
       ];
 
@@ -129,16 +138,29 @@ const QuoteHistory = ({ shellContext }) => {
       
       setQuotes(mockQuotes);
       
-      // Real API call would be:
-      // const response = await axios.get(`${API_URL}/quotes/history`);
-      // setQuotes(response.data.quotes);
-      
     } catch (error) {
       console.error('Failed to load quotes:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  // Quote type options based on view
+  const quoteTypeOptions = viewMode === 'customer' ? [
+    { value: 'all', label: 'All Types' },
+    { value: 'ground-ltl', label: 'Ground - LTL' },
+    { value: 'ground-ftl', label: 'Ground - FTL' },
+    { value: 'import-air', label: 'Import Air' },
+    { value: 'import-ocean', label: 'Import Ocean' },
+    { value: 'export-air', label: 'Export Air' },
+    { value: 'export-ocean', label: 'Export Ocean' },
+    { value: 'project', label: 'Project Cargo' }
+  ] : [
+    { value: 'all', label: 'All Types' },
+    { value: 'export-air', label: 'Export Air' },
+    { value: 'export-ocean', label: 'Export Ocean' },
+    { value: 'project', label: 'Project' }
+  ];
 
   // Filter and sort quotes
   const filteredQuotes = useMemo(() => {
@@ -157,6 +179,11 @@ const QuoteHistory = ({ shellContext }) => {
     // Status filter
     if (statusFilter !== 'all') {
       filtered = filtered.filter(quote => quote.status === statusFilter);
+    }
+
+    // Type filter
+    if (typeFilter !== 'all') {
+      filtered = filtered.filter(quote => quote.type === typeFilter);
     }
 
     // Date filter
@@ -194,7 +221,17 @@ const QuoteHistory = ({ shellContext }) => {
     });
 
     return filtered;
-  }, [quotes, searchTerm, statusFilter, dateFilter, sortBy]);
+  }, [quotes, searchTerm, statusFilter, typeFilter, dateFilter, sortBy]);
+
+  const handleQuoteClick = (quote) => {
+    if (viewMode === 'customer' && quote.type.includes('ground')) {
+      // For ground quotes, navigate to a different details page
+      navigate(`/quotes/ground/details/${quote.id}`, { state: { quote } });
+    } else {
+      // For export/import quotes
+      navigate(`/quotes/details/${quote.id}`);
+    }
+  };
 
   const getStatusColor = (status) => {
     switch(status) {
@@ -269,7 +306,7 @@ const QuoteHistory = ({ shellContext }) => {
             </p>
           </div>
           <button
-            onClick={() => navigate('/quotes/dashboard')}
+            onClick={() => navigate(viewMode === 'customer' ? '/quotes/dashboard' : '/quotes/export-air')}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             New Quote
@@ -331,6 +368,23 @@ const QuoteHistory = ({ shellContext }) => {
               />
             </div>
 
+            {/* Type Filter */}
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className={`px-3 py-2 rounded-md border ${
+                isDarkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white' 
+                  : 'bg-white border-gray-300'
+              }`}
+            >
+              {quoteTypeOptions.map(option => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+
             {/* Status Filter */}
             <select
               value={statusFilter}
@@ -363,21 +417,6 @@ const QuoteHistory = ({ shellContext }) => {
               <option value="week">Last 7 Days</option>
               <option value="month">Last 30 Days</option>
             </select>
-
-            {/* Sort */}
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className={`px-3 py-2 rounded-md border ${
-                isDarkMode 
-                  ? 'bg-gray-700 border-gray-600 text-white' 
-                  : 'bg-white border-gray-300'
-              }`}
-            >
-              <option value="recent">Most Recent</option>
-              <option value="oldest">Oldest First</option>
-              <option value="status">By Status</option>
-            </select>
           </div>
 
           <div className={`mt-3 text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
@@ -403,116 +442,6 @@ const QuoteHistory = ({ shellContext }) => {
                 <thead className={isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}>
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Quote #
+                      Type
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Route
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Cargo
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Progress
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Carriers
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Created
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Action
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
-                  {filteredQuotes.map((quote) => (
-                    <tr 
-                      key={quote.id}
-                      className={`${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'} cursor-pointer`}
-                      onClick={() => navigate(`/quotes/details/${quote.id}`)}
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                          {quote.id}
-                        </span>
-                      </td>
-                      
-                      <td className="px-6 py-4">
-                        <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
-                          <div className="font-medium">{quote.origin}</div>
-                          <div className="text-gray-400">↓</div>
-                          <div>{quote.destination}</div>
-                        </div>
-                      </td>
-
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
-                          <span className="font-medium">{quote.totalWeight}</span>
-                          <span className="text-gray-500 ml-1">
-                            / {quote.totalPieces} pcs
-                          </span>
-                        </div>
-                      </td>
-
-                      <td className="px-6 py-4">
-                        <div className="flex gap-1">
-                          <ProgressPill {...quote.progress.origin} label="Origin" />
-                          <ProgressPill {...quote.progress.airfreight} label="Air" />
-                          <ProgressPill {...quote.progress.destination} label="Dest" />
-                        </div>
-                      </td>
-
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <span className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                            {quote.carrierResponses}/{quote.maxCarriers}
-                          </span>
-                          <div className="ml-2 w-16 bg-gray-200 rounded-full h-2">
-                            <div 
-                              className="bg-blue-600 h-2 rounded-full"
-                              style={{ width: `${(quote.carrierResponses / quote.maxCarriers) * 100}%` }}
-                            />
-                          </div>
-                        </div>
-                      </td>
-
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs rounded-full ${getStatusColor(quote.status)}`}>
-                          {getStatusLabel(quote.status)}
-                        </span>
-                      </td>
-
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                          {formatDate(quote.createdAt)}
-                        </span>
-                      </td>
-
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/quotes/details/${quote.id}`);
-                          }}
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          <ChevronRight className="h-5 w-5" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-export default QuoteHistory;
+                    <th className="px-6 py-3 text-left text-xs font-mediu
