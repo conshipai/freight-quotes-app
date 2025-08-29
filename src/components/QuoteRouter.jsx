@@ -1,4 +1,4 @@
-// src/components/QuoteRouter.jsx
+// src/components/QuoteRouter.jsx (Keep this one, delete the one in src/router/)
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import UnifiedLayout from './UnifiedLayout';
@@ -78,12 +78,15 @@ const QuoteRouter = ({ shellContext }) => {
             <Route path="dashboard" element={<CustomerDashboard shellContext={shellContext} />} />
             <Route path="import-air" element={<ComingSoon title="Import Air" isDarkMode={shellContext?.isDarkMode} />} />
             <Route path="import-ocean" element={<ComingSoon title="Import Ocean" isDarkMode={shellContext?.isDarkMode} />} />
-            <Route path="export-air" element={<ComingSoon title="Export Air" isDarkMode={shellContext?.isDarkMode} />} />
-            <Route path="export-ocean" element={<ComingSoon title="Export Ocean" isDarkMode={shellContext?.isDarkMode} />} />
+            <Route path="export-air" element={<ExportAir shellContext={shellContext} />} />
+            <Route path="export-ocean" element={<ExportOcean shellContext={shellContext} />} />
             <Route path="ground/*" element={<GroundQuotes shellContext={shellContext} />} />
             <Route path="project" element={<ComingSoon title="Project Cargo" isDarkMode={shellContext?.isDarkMode} />} />
-            <Route path="history" element={<QuoteHistory shellContext={shellContext} viewMode="customer" />} />
+            <Route path="history" element={<QuoteHistory shellContext={shellContext} viewMode={viewMode} />} />
             <Route path="booking" element={<BookingPage shellContext={shellContext} />} />
+            <Route path="details/:quoteId" element={<QuoteDetails shellContext={shellContext} />} />
+            <Route path="booking-success" element={<BookingSuccess shellContext={shellContext} />} />
+            <Route path="success" element={<QuoteSuccess shellContext={shellContext} />} />
             <Route path="*" element={<Navigate to="/quotes/dashboard" replace />} />
           </>
         ) : (
@@ -101,7 +104,7 @@ const QuoteRouter = ({ shellContext }) => {
             
             {/* Quote Flow */}
             <Route path="success" element={<QuoteSuccess shellContext={shellContext} />} />
-            <Route path="history" element={<QuoteHistory shellContext={shellContext} viewMode="agent" />} />
+            <Route path="history" element={<QuoteHistory shellContext={shellContext} viewMode={viewMode} />} />
             <Route path="details/:quoteId" element={<QuoteDetails shellContext={shellContext} />} />
             <Route path="booking-success" element={<BookingSuccess shellContext={shellContext} />} />
             <Route path="*" element={<Navigate to="/quotes/dashboard" replace />} />
@@ -114,13 +117,15 @@ const QuoteRouter = ({ shellContext }) => {
 
 // Placeholder component
 const ComingSoon = ({ title, isDarkMode }) => (
-  <div className={`p-8 text-center rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-    <h2 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-      {title}
-    </h2>
-    <p className={isDarkMode ? 'text-gray-300' : 'text-gray-600'}>
-      Coming soon!
-    </p>
+  <div className="p-6">
+    <div className={`p-8 text-center rounded-lg ${isDarkMode ? 'bg-gray-800' : 'bg-white'} shadow`}>
+      <h2 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+        {title}
+      </h2>
+      <p className={isDarkMode ? 'text-gray-300' : 'text-gray-600'}>
+        Coming soon!
+      </p>
+    </div>
   </div>
 );
 
