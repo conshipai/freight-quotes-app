@@ -186,19 +186,23 @@ const LTLQuote = ({ shellContext, customerCarriers, customerId }) => {
     }
   };
 
-    const handleBook = (carrier, rate) => {
-    console.log('Booking:', { carrier, rate, formData }); // Add this for debugging
-    navigate('/quotes/booking', {
-      state: {
-        requestId,
-        carrier,
-        rate,
-        shipmentDetails: formData,
-        quoteType: 'ground-ltl'
-      }
-    });
+const handleBook = (carrier, rate) => {
+  console.log('handleBook called with:', { carrier, rate, requestId, formData });
+  
+  const bookingState = {
+    requestId,
+    carrier,
+    rate,
+    shipmentDetails: formData,
+    quoteType: 'ground-ltl'
   };
-
+  
+  console.log('Navigating to /quotes/booking with state:', bookingState);
+  
+  navigate('/quotes/booking', {
+    state: bookingState
+  });
+};
   const renderProcessingView = () => {
     const totalCarriers = carrierResponses.length;
     const completedCarriers = carrierResponses.filter(r => r.timestamp).length;
