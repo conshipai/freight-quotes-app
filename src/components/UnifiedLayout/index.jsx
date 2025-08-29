@@ -1,53 +1,26 @@
-// src/components/UnifiedLayout/index.jsx
+// src/components/UnifiedLayout/index.jsx - Updated
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Package, Plane, Ship, Truck, Globe,
-  Clock, ChevronLeft, Menu, ArrowUpDown, Building2, Users
+  Clock, ArrowUpDown
 } from 'lucide-react';
 import Navigation from './Navigation';
 import TopBar from './TopBar';
-import ViewToggle from './ViewToggle';
 
-const UnifiedLayout = ({ children, shellContext }) => {
+const UnifiedLayout = ({ 
+  children, 
+  shellContext, 
+  viewMode, 
+  onViewModeChange, 
+  canToggleView 
+}) => {
   const navigate = useNavigate();
   const location = useLocation();
   const isDarkMode = shellContext?.isDarkMode || false;
-  const userRole = shellContext?.user?.role || 'agent';
-  
-  // Determine if user can toggle views
-  const canToggleView = ['system_admin', 'conship_employee'].includes(userRole);
-  
-  // Get default view based on role
-  const getDefaultView = (role) => {
-    switch(role) {
-      case 'customer_master':
-      case 'customer_user':
-      case 'customer':
-      case 'business_partner':
-        return 'customer';
-      case 'partner_master':
-      case 'partner_user':
-      case 'foreign_partner':
-        return 'agent';
-      case 'system_admin':
-      case 'conship_employee':
-        return 'agent'; // Default to agent view for admins
-      default:
-        return 'agent';
-    }
-  };
   
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [viewMode, setViewMode] = useState(getDefaultView(userRole));
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
-  // Update view when role changes
-  useEffect(() => {
-    if (!canToggleView) {
-      setViewMode(getDefaultView(userRole));
-    }
-  }, [userRole, canToggleView]);
   
   // Close mobile menu on route change
   useEffect(() => {
@@ -91,6 +64,7 @@ const UnifiedLayout = ({ children, shellContext }) => {
         mobileMenuOpen={mobileMenuOpen}
         navigationItems={navigationItems}
         shellContext={shellContext}
+        viewMode={viewMode}
       />
 
       {/* Mobile Menu Overlay */}
@@ -103,11 +77,11 @@ const UnifiedLayout = ({ children, shellContext }) => {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top Bar */}
+        {/* Top Bar with Toggle */}
         <TopBar
           viewMode={viewMode}
           canToggleView={canToggleView}
-          setViewMode={setViewMode}
+          setViewMode={onViewModeChange}
           shellContext={shellContext}
         />
         
