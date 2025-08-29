@@ -1,23 +1,11 @@
+// src/components/PartnerQuotes/ProjectQuotes.jsx
 import React from 'react';
-import { Briefcase } from 'lucide-react';
 
-const ProjectQuotes = ({ shellContext }) => {
-  const isDarkMode = shellContext?.isDarkMode;
-  
+const ProjectQuotes = () => {
   return (
-    <div className={`p-6 rounded-lg shadow ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
-      <h2 className={`text-2xl font-bold mb-6 flex items-center gap-2 ${
-        isDarkMode ? 'text-white' : 'text-gray-900'
-      }`}>
-        <Briefcase className="w-6 h-6 text-purple-500" />
-        Project Quotes
-      </h2>
-      <div className={`p-8 text-center rounded-lg ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
-        <Briefcase className={`w-16 h-16 mx-auto mb-4 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`} />
-        <p className={`text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-          Project Quotes functionality coming soon!
-        </p>
-      </div>
+    <div className="p-6">
+      <h1 className="text-2xl font-bold mb-4">Project Quotes</h1>
+      <p>Your project quotes will appear here</p>
     </div>
   );
 };
