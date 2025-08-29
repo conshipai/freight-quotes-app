@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import UnifiedLayout from '../components/UnifiedLayout';
 import UnifiedDashboard from '../components/UnifiedDashboard';
+import QuoteRouter from './components/QuoteRouter';
 
 // Existing components
 import CustomerQuotes from '../components/CustomerQuotes';
@@ -74,7 +75,7 @@ const QuoteRouter = ({ userRole, shellContext }) => {
         <Route path="booking" element={<BookingPage shellContext={shellContext} />} />
         <Route path="booking-success" element={<BookingSuccess shellContext={shellContext} />} />
         <Route path="success" element={<QuoteSuccess shellContext={shellContext} />} />
-        
+        <Route path="/quotes/*" element={<QuoteRouter shellContext={shellContext} />} />
         {/* Customer-specific Routes */}
         {showCustomerRoutes && (
           <>
