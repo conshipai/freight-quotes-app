@@ -70,7 +70,8 @@ const QuoteRouter = ({ userRole, shellContext }) => {
       <Routes>
         {/* Common Routes */}
         <Route path="dashboard" element={<UnifiedDashboard viewMode={currentView} shellContext={shellContext} />} />
-        <Route path="history" element={<QuoteHistory shellContext={shellContext} />} />
+       // Update the routes in QuoteRouter.jsx
+<Route path="history" element={<QuoteHistory shellContext={shellContext} viewMode={viewMode} />} />
         <Route path="details/:quoteId" element={<QuoteDetails shellContext={shellContext} />} />
         <Route path="booking" element={<BookingPage shellContext={shellContext} />} />
         <Route path="booking-success" element={<BookingSuccess shellContext={shellContext} />} />
