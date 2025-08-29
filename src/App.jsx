@@ -1,11 +1,12 @@
 import React from 'react';
-import QuoteRouter from './router/QuoteRouter';
+import { BrowserRouter } from 'react-router-dom';
+import QuoteRouter from './components/QuoteRouter';
 import './styles/index.css';
 
 function App({ shellContext, basename }) {
   const userRole = shellContext?.user?.role || 'foreign_partner';
   const isDarkMode = shellContext?.isDarkMode || false;
-
+  
   // Apply dark mode
   React.useEffect(() => {
     if (isDarkMode) {
@@ -14,10 +15,12 @@ function App({ shellContext, basename }) {
       document.documentElement.classList.remove('dark');
     }
   }, [isDarkMode]);
-
+  
   return (
     <div className={isDarkMode ? 'dark' : ''}>
-      <QuoteRouter userRole={userRole} shellContext={shellContext} />
+      <BrowserRouter basename={basename || '/quotes'}>
+        <QuoteRouter userRole={userRole} shellContext={shellContext} />
+      </BrowserRouter>
     </div>
   );
 }
