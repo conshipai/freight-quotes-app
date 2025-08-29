@@ -1,10 +1,7 @@
-// src/components/UnifiedLayout/index.jsx - Updated
+// src/components/UnifiedLayout/index.jsx
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, Package, Plane, Ship, Truck, Globe,
-  Clock, ArrowUpDown
-} from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { Menu } from 'lucide-react';
 import Navigation from './Navigation';
 import TopBar from './TopBar';
 
@@ -15,7 +12,6 @@ const UnifiedLayout = ({
   onViewModeChange, 
   canToggleView 
 }) => {
-  const navigate = useNavigate();
   const location = useLocation();
   const isDarkMode = shellContext?.isDarkMode || false;
   
@@ -28,22 +24,30 @@ const UnifiedLayout = ({
   }, [location.pathname]);
   
   // Navigation items based on view
-  const navigationItems = viewMode === 'customer' ? [
-    { path: '/quotes/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/quotes/import-air', label: 'Import Air', icon: Globe },
-    { path: '/quotes/import-ocean', label: 'Import Ocean', icon: Ship },
-    { path: '/quotes/export-air', label: 'Export Air', icon: ArrowUpDown },
-    { path: '/quotes/export-ocean', label: 'Export Ocean', icon: Ship },
-    { path: '/quotes/ground', label: 'Ground', icon: Truck },
-    { path: '/quotes/project', label: 'Project Cargo', icon: Package },
-    { path: '/quotes/history', label: 'History', icon: Clock },
-  ] : [
-    { path: '/quotes/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/quotes/export-air', label: 'Export Air', icon: Plane },
-    { path: '/quotes/export-ocean', label: 'Export Ocean', icon: Ship },
-    { path: '/quotes/projects', label: 'Project Quotes', icon: Package },
-    { path: '/quotes/history', label: 'History', icon: Clock },
-  ];
+  const getNavigationItems = () => {
+    if (viewMode === 'customer') {
+      return [
+        { path: '/quotes/dashboard', label: 'Dashboard', icon: 'LayoutDashboard' },
+        { path: '/quotes/import-air', label: 'Import Air', icon: 'Globe' },
+        { path: '/quotes/import-ocean', label: 'Import Ocean', icon: 'Ship' },
+        { path: '/quotes/export-air', label: 'Export Air', icon: 'ArrowUpDown' },
+        { path: '/quotes/export-ocean', label: 'Export Ocean', icon: 'Ship' },
+        { path: '/quotes/ground', label: 'Ground', icon: 'Truck' },
+        { path: '/quotes/project', label: 'Project Cargo', icon: 'Package' },
+        { path: '/quotes/history', label: 'History', icon: 'Clock' },
+      ];
+    } else {
+      return [
+        { path: '/quotes/dashboard', label: 'Dashboard', icon: 'LayoutDashboard' },
+        { path: '/quotes/export-air', label: 'Export Air', icon: 'Plane' },
+        { path: '/quotes/export-ocean', label: 'Export Ocean', icon: 'Ship' },
+        { path: '/quotes/projects', label: 'Project Quotes', icon: 'Package' },
+        { path: '/quotes/history', label: 'History', icon: 'Clock' },
+      ];
+    }
+  };
+
+  const navigationItems = getNavigationItems();
 
   return (
     <div className={`flex h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
