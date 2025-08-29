@@ -30,7 +30,7 @@ const GroundQuote = () => <div>Ground Quote - Coming Soon</div>;
 const QuoteRouter = () => {
   const { user } = useAuth();
   const userType = getUserType(user);
-
+  
   // Common routes for both user types
   const commonRoutes = (
     <>
@@ -51,7 +51,7 @@ const QuoteRouter = () => {
       <Route path="booking-success" element={<BookingSuccess />} />
     </>
   );
-
+  
   if (userType === 'customer') {
     return (
       <Routes>
@@ -72,7 +72,7 @@ const QuoteRouter = () => {
       </Routes>
     );
   }
-
+  
   // Foreign agent routes
   return (
     <Routes>
