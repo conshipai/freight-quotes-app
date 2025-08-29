@@ -444,4 +444,143 @@ const QuoteHistory = ({ shellContext, viewMode = 'agent' }) => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Type
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-mediu
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Quote #
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Route
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Cargo
+                    </th>
+                    {viewMode === 'agent' && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Progress
+                      </th>
+                    )}
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Carriers
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Created
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Action
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className={`divide-y ${isDarkMode ? 'divide-gray-700' : 'divide-gray-200'}`}>
+                  {filteredQuotes.map((quote) => {
+                    const Icon = quote.icon || Package;
+                    return (
+                      <tr 
+                        key={quote.id}
+                        className={`${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'} cursor-pointer`}
+                        onClick={() => handleQuoteClick(quote)}
+                      >
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center gap-2">
+                            <Icon className={`w-5 h-5 ${
+                              quote.type.includes('ground') ? 'text-green-600' :
+                              quote.type.includes('air') ? 'text-blue-600' :
+                              quote.type.includes('ocean') ? 'text-cyan-600' :
+                              'text-purple-600'
+                            }`} />
+                            <span className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                              {quote.quoteType}
+                            </span>
+                          </div>
+                        </td>
+                        
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                            {quote.id}
+                          </span>
+                        </td>
+                        
+                        <td className="px-6 py-4">
+                          <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
+                            <div className="font-medium">{quote.origin}</div>
+                            <div className="text-gray-400">↓</div>
+                            <div>{quote.destination}</div>
+                          </div>
+                        </td>
+
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className={`text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-900'}`}>
+                            <span className="font-medium">{quote.totalWeight}</span>
+                            <span className="text-gray-500 ml-1">
+                              / {quote.totalPieces} pcs
+                            </span>
+                          </div>
+                        </td>
+
+                        {viewMode === 'agent' && quote.progress && (
+                          <td className="px-6 py-4">
+                            <div className="flex gap-1">
+                              <ProgressPill {...quote.progress.origin} label="Origin" />
+                              {quote.progress.airfreight && (
+                                <ProgressPill {...quote.progress.airfreight} label="Air" />
+                              )}
+                              {quote.progress.ocean && (
+                                <ProgressPill {...quote.progress.ocean} label="Ocean" />
+                              )}
+                              <ProgressPill {...quote.progress.destination} label="Dest" />
+                            </div>
+                          </td>
+                        )}
+
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <span className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              {quote.carrierResponses}/{quote.maxCarriers}
+                            </span>
+                            <div className="ml-2 w-16 bg-gray-200 rounded-full h-2">
+                              <div 
+                                className="bg-blue-600 h-2 rounded-full"
+                                style={{ width: `${(quote.carrierResponses / quote.maxCarriers) * 100}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`inline-flex px-2 py-1 text-xs rounded-full ${getStatusColor(quote.status)}`}>
+                            {getStatusLabel(quote.status)}
+                          </span>
+                        </td>
+
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                            {formatDate(quote.createdAt)}
+                          </span>
+                        </td>
+
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleQuoteClick(quote);
+                            }}
+                            className="text-blue-600 hover:text-blue-800"
+                          >
+                            <ChevronRight className="h-5 w-5" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default QuoteHistory;
