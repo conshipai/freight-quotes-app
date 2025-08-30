@@ -5,19 +5,21 @@ new ModuleFederationPlugin({
     './App': './src/App',
     './Widget': './src/Widget',
   },
-  shared: {
-    react: {
-      singleton: true,
-      requiredVersion: require('./package.json').dependencies.react,
-    },
-    'react-dom': {
-      singleton: true,
-      requiredVersion: require('./package.json').dependencies['react-dom'],
-    },
-    'react-router-dom': { 
-      singleton: true,
-      requiredVersion: require('./package.json').dependencies['react-router-dom'],
-      eager: true  // Add this
-    },
+ shared: {
+  react: {
+    singleton: true,
+    eager: true,
+    requiredVersion: require('./package.json').dependencies.react,
   },
+  'react-dom': {
+    singleton: true,
+    eager: true,
+    requiredVersion: require('./package.json').dependencies['react-dom'],
+  },
+  'react-router-dom': { 
+    singleton: true,
+    eager: true,
+    requiredVersion: require('./package.json').dependencies['react-router-dom'],
+  },
+},
 }),
